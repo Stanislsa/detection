@@ -167,6 +167,7 @@ data/raw/
 data/processed/
 data/external/
 data/interim/
+donne/
 donne/raw/
 donne/processed/
 *.zip
