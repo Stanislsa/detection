@@ -1,0 +1,38 @@
+# Configuration de la journalisation
+logging:
+  # Niveau de log
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  
+  # Sortie console
+  console:
+    enabled: true
+    level: "INFO"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    colorize: true
+    
+  # Sortie fichier
+  file:
+    enabled: true
+    level: "DEBUG"
+    path: "logs/sentinelai.log"
+    max_size_mb: 10
+    backup_count: 5
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
+    
+  # Rotation
+  rotation:
+    enabled: true
+    when: "midnight"  # midnight, H, D, W
+    interval: 1
+    backup_count: 30
+    
+  # Loggers spécifiques
+  loggers:
+    app.desktop.workers:
+      level: "DEBUG"
+    app.ai:
+      level: "INFO"
+    app.events:
+      level: "INFO"
+    sqlalchemy:
+      level: "WARNING"

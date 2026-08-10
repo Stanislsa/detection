@@ -1,0 +1,40 @@
+# Configuration principale de l'application
+application:
+  name: "SentinelAI"
+  version: "1.0.0"
+  environment: "development"  # development, staging, production
+  
+  # Interface
+  ui:
+    theme: "dark"  # light, dark, auto
+    language: "fr"  # fr, en
+    window_width: 1280
+    window_height: 720
+    auto_save: true
+    
+  # Backend
+  backend:
+    enabled: true
+    host: "localhost"
+    port: 8000
+    timeout: 30
+    
+  # WebSocket
+  websocket:
+    enabled: true
+    host: "localhost"
+    port: 8001
+    reconnect_interval: 5
+    max_reconnect_attempts: 10
+    
+  # Authentification
+  auth:
+    token_expiry_hours: 24
+    refresh_token_expiry_hours: 168  # 7 jours
+    mfa_enabled: false
+    
+  # Mises à jour
+  updates:
+    check_on_startup: true
+    auto_update: false
+    beta_channel: false

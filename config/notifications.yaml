@@ -1,0 +1,59 @@
+# Configuration des notifications
+notifications:
+  # Notifications dans l'application
+  desktop:
+    enabled: true
+    sound: true
+    duration: 5000  # ms
+    position: "top_right"  # top_left, top_right, bottom_left, bottom_right
+    
+  # Email
+  email:
+    enabled: false
+    smtp_host: "smtp.gmail.com"
+    smtp_port: 587
+    smtp_use_tls: true
+    smtp_username: ""
+    smtp_password: ""
+    from_address: ""
+    to_addresses: []
+    
+  # Telegram
+  telegram:
+    enabled: false
+    bot_token: ""
+    chat_id: ""
+    
+  # Webhook
+  webhook:
+    enabled: false
+    url: ""
+    method: "POST"
+    headers: {}
+    
+  # Règles de notification par type d'alerte
+  alert_rules:
+    intrusion:
+      enabled: true
+      channels: ["desktop"]
+      cooldown: 60  # secondes
+      
+    fall:
+      enabled: true
+      channels: ["desktop", "telegram"]
+      cooldown: 30
+      
+    loitering:
+      enabled: true
+      channels: ["desktop"]
+      cooldown: 120
+      
+    crowding:
+      enabled: true
+      channels: ["desktop"]
+      cooldown: 120
+      
+    movement:
+      enabled: false
+      channels: []
+      cooldown: 300

@@ -1,0 +1,39 @@
+# Vision & IA
+mediapipe==0.10.35
+opencv-python==4.11.0.86
+numpy<2.0
+ultralytics==8.3.0
+openvino==2024.5.0
+
+# Backend API
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.11.3
+
+# Base de données
+sqlalchemy==2.0.40
+alembic==1.15.2
+
+# Interface Desktop
+PyQt6==6.9.0
+
+# Alertes
+python-telegram-bot==22.0
+aiosmtplib==4.0.0
+
+# Sécurité
+cryptography==44.0.0
+argon2-cffi==23.1.0
+pyotp==2.9.0
+python-jose[cryptography]==3.4.0
+
+# ML / Classification
+xgboost==3.0.0
+scikit-learn==1.6.1
+joblib==1.4.2
+
+# Utilitaires
+python-dotenv==1.1.0
+pillow==11.2.1
+requests==2.32.3

@@ -1,0 +1,51 @@
+# Configuration du stockage
+storage:
+  # Répertoire de base
+  base_dir: "~/SentinelAI"
+  
+  # Politique de stockage
+  policy:
+    auto_cleanup_enabled: true
+    cleanup_interval_hours: 24
+    global_max_size_gb: 100.0
+    
+  # Snapshots
+  snapshots:
+    retention_days: 7
+    max_count: 1000
+    max_size_gb: 5.0
+    format: "jpg"
+    quality: 85
+    
+  # Enregistrements
+  recordings:
+    retention_days: 30
+    max_count: 100
+    max_size_gb: 50.0
+    rotation_enabled: true
+    codec: "mp4v"
+    fps: 30
+    
+  # Rapports
+  reports:
+    retention_days: 90
+    max_count: 50
+    max_size_gb: 1.0
+    
+  # Exports
+  exports:
+    retention_days: 30
+    max_count: 20
+    max_size_gb: 2.0
+    
+  # Cache
+  cache:
+    ttl_hours: 24
+    max_size_gb: 1.0
+    
+  # Quotas par caméra (par défaut)
+  camera_quota:
+    max_recordings: 50
+    max_recordings_size_gb: 10.0
+    max_snapshots: 500
+    max_snapshots_size_gb: 2.0

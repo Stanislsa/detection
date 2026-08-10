@@ -1,0 +1,5 @@
+train: f:/Axyris/proj_indiv/detection/data/dataset/train/images
+val: f:/Axyris/proj_indiv/detection/data/dataset/valid/images
+
+nc: 2
+names: ['non-fall', 'fall']

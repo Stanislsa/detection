@@ -1,0 +1,58 @@
+# Configuration de l'IA
+ai:
+  # Backend d'inférence
+  backend:
+    mode: "auto"  # auto, cpu, openvino, cuda, directml
+    device: "auto"  # auto, 0, 1, 2, ...
+    
+  # Modèles YOLO
+  yolo:
+    default_model: "yolov8n.pt"
+    models_path: "models/yolo"
+    download_on_missing: true
+    
+    # Modèles disponibles
+    available:
+      - name: "yolov8n.pt"
+        size: "nano"
+        speed: "fast"
+        accuracy: "medium"
+      - name: "yolov8s.pt"
+        size: "small"
+        speed: "medium"
+        accuracy: "good"
+      - name: "yolov8m.pt"
+        size: "medium"
+        speed: "slow"
+        accuracy: "high"
+      - name: "yolov8l.pt"
+        size: "large"
+        speed: "very_slow"
+        accuracy: "very_high"
+        
+  # MediaPipe
+  mediapipe:
+    enabled: true
+    model_complexity: 1  # 0, 1, 2
+    min_detection_confidence: 0.5
+    min_tracking_confidence: 0.5
+    static_image_mode: false
+    
+  # OpenVINO
+  openvino:
+    enabled: true
+    device: "AUTO"  # AUTO, CPU, GPU, NPU
+    precision: "FP16"  # FP32, FP16, INT8
+    models_path: "models/openvino"
+    
+  # Classes à détecter
+  classes:
+    person:
+      enabled: true
+      confidence_threshold: 0.5
+    vehicle:
+      enabled: false
+      confidence_threshold: 0.5
+    animal:
+      enabled: false
+      confidence_threshold: 0.5

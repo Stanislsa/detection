@@ -1,0 +1,52 @@
+# Configuration des caméras
+cameras:
+  # Caméra par défaut
+  default:
+    source: "0"  # 0 = webcam, rtsp://..., file://...
+    name: "Default Camera"
+    enabled: true
+    
+    # Capture
+    capture:
+      resolution: [1920, 1080]
+      fps: 30
+      buffer_size: 3
+      reconnect_attempts: 5
+      reconnect_interval: 5
+      
+    # Détection IA
+    detection:
+      enabled: true
+      model: "yolov8n.pt"
+      confidence_threshold: 0.5
+      nms_threshold: 0.45
+      max_detections: 100
+      
+    # Enregistrement
+    recording:
+      enabled: false
+      on_motion: true
+      on_alert: true
+      codec: "mp4v"
+      fps: 30
+      resolution: [1920, 1080]
+      
+    # Zones de détection (polygones)
+    zones:
+      - id: "zone_1"
+        name: "Entrée principale"
+        polygon: [[100, 100], [300, 100], [300, 300], [100, 300]]
+        type: "restricted"
+        max_persons: 0
+        
+  # Exemple de caméra RTSP
+  # camera_1:
+  #   source: "rtsp://admin:password@192.168.1.100:554/stream"
+  #   name: "Caméra Entrée"
+  #   enabled: true
+  #   capture:
+  #     resolution: [1920, 1080]
+  #     fps: 30
+  #   detection:
+  #     enabled: true
+  #     model: "yolov8s.pt"
