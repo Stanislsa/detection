@@ -127,7 +127,7 @@ Rectangle {
             }
         }
 
-        Row {
+        RowLayout {
             width: parent.width
             spacing: theme.spacingS
 

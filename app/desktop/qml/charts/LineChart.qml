@@ -6,15 +6,29 @@ Item {
     
     property var theme
     property var data: [] // Array of {x, y} values
-    property color lineColor: theme.primary
+    property color lineColor: theme ? theme.primary : "#2563EB"
     property real lineWidth: 2
     
     implicitWidth: 300
     implicitHeight: 200
     
+    onDataChanged: canvas.requestPaint()
+    onLineColorChanged: canvas.requestPaint()
+    
     Canvas {
         id: canvas
         anchors.fill: parent
+        
+        // Explicit repaint-on-resize hooks on the Canvas itself (not just
+        // on the outer Item): with two or more nested `anchors.margins`
+        // levels above this Canvas, its final width/height settle one
+        // layout pass after Canvas's own automatic first paint, and
+        // Canvas does not reliably repaint itself afterwards without
+        // this. Without it, charts nested a couple of margin'd
+        // containers deep (as on the Observability and AI Training
+        // pages) rendered permanently blank.
+        onWidthChanged: requestPaint()
+        onHeightChanged: requestPaint()
         
         onPaint: {
             var ctx = getContext("2d")
@@ -23,7 +37,7 @@ Item {
             if (control.data.length < 2) return
             
             // Draw axes
-            ctx.strokeStyle = theme.border
+            ctx.strokeStyle = theme ? theme.border : "#1E293B"
             ctx.lineWidth = 1
             ctx.beginPath()
             ctx.moveTo(30, 10)

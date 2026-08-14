@@ -116,14 +116,14 @@ AppDialog {
             
             AppButton {
                 text: "Cancel"
-                backgroundColor: theme ? theme.surface : "#2d2d2d"
+                variant: "secondary"
                 theme: control.theme
                 onClicked: control.close()
             }
             
             AppButton {
                 text: "Export"
-                backgroundColor: theme ? theme.primary : "#0078d4"
+                variant: "primary"
                 theme: control.theme
                 onClicked: {
                     control.state = "loading"

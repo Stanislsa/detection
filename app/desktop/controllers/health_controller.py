@@ -33,7 +33,7 @@ class HealthController(QObject):
         self.metricsChanged.emit()
         self.healthStatusChanged.emit()
     
-    @pyqtProperty(dict, notify=healthStatusChanged)
+    @pyqtProperty('QVariantMap', notify=healthStatusChanged)
     def systemOverview(self) -> Dict[str, Any]:
         """Vue d'ensemble du système."""
         return self._service.get_system_overview().to_dict()
@@ -43,7 +43,7 @@ class HealthController(QObject):
         """Liste des composants."""
         return [c.to_dict() for c in self._service.get_all_components()]
     
-    @pyqtProperty(dict, notify=healthStatusChanged)
+    @pyqtProperty('QVariantMap', notify=healthStatusChanged)
     def healthStatistics(self) -> Dict[str, Any]:
         """Statistiques de santé."""
         return self._service.get_health_statistics()
@@ -53,13 +53,13 @@ class HealthController(QObject):
         """Statut global du système."""
         return self._service.get_system_overview().overall_status.value
     
-    @pyqtSlot(str, result=dict)
+    @pyqtSlot(str, result='QVariantMap')
     def getComponent(self, component_type: str) -> Optional[Dict[str, Any]]:
         """Récupère un composant par type."""
         component = self._service.get_component_health(ComponentType(component_type))
         return component.to_dict() if component else None
     
-    @pyqtSlot(str, result=list)
+    @pyqtSlot(str, int, result=list)
     def getMetricHistory(self, component_type: str, limit: int = 50) -> List[Dict[str, Any]]:
         """Récupère l'historique des métriques d'un composant."""
         metrics = self._service.get_metric_history(ComponentType(component_type), limit)

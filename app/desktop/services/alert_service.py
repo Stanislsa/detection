@@ -1,133 +1,138 @@
 """
-Service pour la gestion des alertes et incidents.
+Service de gestion des alertes et incidents — avec flux temps réel simulé.
 """
 
+from __future__ import annotations
+
+import random
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Callable
+
 from app.desktop.models.alert_model import Alert, AlertPriority, AlertStatus, AlertType
+from app.desktop.models.alert_config import AlertRealtimeConfig
+
+
+CRITICAL_SCENARIOS = []  # filled after
+
+_SCENARIOS = [
+    {
+        "title": "Unauthorized Access Detected",
+        "description": "AI engine detected unauthorized access at Server Room A - Zone 4.",
+        "priority": AlertPriority.CRITICAL,
+        "alert_type": AlertType.INTRUSION,
+        "camera_id": "CAM-SR-04",
+        "camera_name": "Server Room Corridor",
+        "location": "Server Room A - Zone 4",
+        "confidence": 0.984,
+    },
+    {
+        "title": "Unrecognized Person",
+        "description": "Unidentified individual lingering near Main Office entrance.",
+        "priority": AlertPriority.HIGH,
+        "alert_type": AlertType.PERSON,
+        "camera_id": "CAM-MO-01",
+        "camera_name": "Main Office",
+        "location": "Main Office",
+        "confidence": 0.912,
+    },
+    {
+        "title": "Tailgating Event",
+        "description": "Possible tailgating detected at Loading Dock 2.",
+        "priority": AlertPriority.MEDIUM,
+        "alert_type": AlertType.INTRUSION,
+        "camera_id": "CAM-LD-02",
+        "camera_name": "Loading Dock 2",
+        "location": "Loading Dock 2",
+        "confidence": 0.84,
+    },
+    {
+        "title": "Vehicle Detected - Parking",
+        "description": "Unknown vehicle lingering at north parking perimeter.",
+        "priority": AlertPriority.MEDIUM,
+        "alert_type": AlertType.VEHICLE,
+        "camera_id": "CAM-PK-12",
+        "camera_name": "Parking West",
+        "location": "Parking Lot / North",
+        "confidence": 0.821,
+    },
+    {
+        "title": "Motion - Restricted Zone",
+        "description": "Unexpected motion in restricted Zone B-4 (Vault Perimeter).",
+        "priority": AlertPriority.HIGH,
+        "alert_type": AlertType.MOTION,
+        "camera_id": "CAM-VLT-02",
+        "camera_name": "Vault Perimeter",
+        "location": "Zone B-4",
+        "confidence": 0.91,
+    },
+    {
+        "title": "Camera Signal Interrupted",
+        "description": "Stream lost on perimeter fence camera PERIM_FNC_09.",
+        "priority": AlertPriority.CRITICAL,
+        "alert_type": AlertType.SYSTEM,
+        "camera_id": "CAM-PF-09",
+        "camera_name": "Perimeter Fence",
+        "location": "Exterior / South Fence",
+        "confidence": 1.0,
+    },
+    {
+        "title": "Crowd Density Warning",
+        "description": "Lobby occupancy exceeds configured threshold (current: 42).",
+        "priority": AlertPriority.LOW,
+        "alert_type": AlertType.PERSON,
+        "camera_id": "CAM-LOB-04",
+        "camera_name": "Main Lobby",
+        "location": "Lobby",
+        "confidence": 0.765,
+    },
+]
 
 
 class AlertService:
-    """Service de gestion des alertes."""
-    
+    """Service de gestion des alertes avec génération temps réel."""
+
     def __init__(self):
         self._alerts: List[Alert] = []
+        self._config = AlertRealtimeConfig()
+        self._counter = 89200
+        self._on_new_alert: Optional[Callable[[dict], None]] = None
         self._generate_mock_data()
-    
-    def _generate_mock_data(self):
-        """Génère des données de test pour les alertes."""
-        now = datetime.now()
-        
-        mock_alerts = [
-            Alert(
-                id="ALT-001",
-                title="Motion Detected - Zone A",
-                description="Unexpected motion detected in restricted area Zone A",
-                priority=AlertPriority.HIGH,
-                status=AlertStatus.OPEN,
-                alert_type=AlertType.MOTION,
-                camera_id="CAM-001",
-                camera_name="Camera 1",
-                location="Zone A",
-                timestamp=now - timedelta(minutes=2)
-            ),
-            Alert(
-                id="ALT-002",
-                title="Person Detected - Main Entrance",
-                description="Person detected at main entrance after hours",
-                priority=AlertPriority.CRITICAL,
-                status=AlertStatus.INVESTIGATING,
-                alert_type=AlertType.PERSON,
-                camera_id="CAM-002",
-                camera_name="Camera 2",
-                location="Main Entrance",
-                timestamp=now - timedelta(minutes=5),
-                acknowledged_by="admin",
-                acknowledged_at=now - timedelta(minutes=4)
-            ),
-            Alert(
-                id="ALT-003",
-                title="Vehicle Detected - Parking Lot",
-                description="Unknown vehicle detected in parking lot",
-                priority=AlertPriority.MEDIUM,
-                status=AlertStatus.OPEN,
-                alert_type=AlertType.VEHICLE,
-                camera_id="CAM-003",
-                camera_name="Camera 3",
-                location="Parking Lot",
-                timestamp=now - timedelta(minutes=15)
-            ),
-            Alert(
-                id="ALT-004",
-                title="System Health Warning",
-                description="High CPU usage detected on inference server",
-                priority=AlertPriority.MEDIUM,
-                status=AlertStatus.ACKNOWLEDGED,
-                alert_type=AlertType.SYSTEM,
-                camera_id="",
-                camera_name="System",
-                location="Server Room",
-                timestamp=now - timedelta(minutes=30),
-                acknowledged_by="admin",
-                acknowledged_at=now - timedelta(minutes=25)
-            ),
-            Alert(
-                id="ALT-005",
-                title="Intrusion Alert - Perimeter",
-                description="Potential intrusion detected at perimeter fence",
-                priority=AlertPriority.CRITICAL,
-                status=AlertStatus.OPEN,
-                alert_type=AlertType.INTRUSION,
-                camera_id="CAM-004",
-                camera_name="Camera 4",
-                location="Perimeter",
-                timestamp=now - timedelta(minutes=1)
-            ),
-            Alert(
-                id="ALT-006",
-                title="Motion Detected - Warehouse",
-                description="Motion detected in warehouse area",
-                priority=AlertPriority.LOW,
-                status=AlertStatus.RESOLVED,
-                alert_type=AlertType.MOTION,
-                camera_id="CAM-005",
-                camera_name="Camera 5",
-                location="Warehouse",
-                timestamp=now - timedelta(hours=1),
-                acknowledged_by="security",
-                acknowledged_at=now - timedelta(minutes=55),
-                resolved_by="security",
-                resolved_at=now - timedelta(minutes=50)
-            ),
-        ]
-        
-        self._alerts = mock_alerts
-    
+
+    def get_config(self) -> dict:
+        return self._config.to_dict()
+
+    def update_config(self, data: dict) -> dict:
+        self._config = AlertRealtimeConfig.from_dict({**self._config.to_dict(), **data})
+        return self._config.to_dict()
+
+    def set_new_alert_callback(self, cb: Callable[[dict], None]) -> None:
+        self._on_new_alert = cb
+
     def get_all_alerts(self) -> List[dict]:
-        """Retourne toutes les alertes."""
-        return [alert.to_dict() for alert in self._alerts]
-    
+        return [a.to_dict() for a in sorted(self._alerts, key=lambda x: x.timestamp, reverse=True)]
+
     def get_alert_by_id(self, alert_id: str) -> Optional[dict]:
-        """Retourne une alerte par son ID."""
-        for alert in self._alerts:
-            if alert.id == alert_id:
-                return alert.to_dict()
+        for a in self._alerts:
+            if a.id == alert_id:
+                return a.to_dict()
         return None
-    
-    def get_alerts_by_priority(self, priority: AlertPriority) -> List[dict]:
-        """Filtre les alertes par priorité."""
-        return [alert.to_dict() for alert in self._alerts if alert.priority == priority]
-    
-    def get_alerts_by_status(self, status: AlertStatus) -> List[dict]:
-        """Filtre les alertes par statut."""
-        return [alert.to_dict() for alert in self._alerts if alert.status == status]
-    
-    def get_alerts_by_camera(self, camera_id: str) -> List[dict]:
-        """Filtre les alertes par caméra."""
-        return [alert.to_dict() for alert in self._alerts if alert.camera_id == camera_id]
-    
+
+    def get_open_count(self) -> int:
+        return sum(
+            1
+            for a in self._alerts
+            if a.status in (AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED, AlertStatus.INVESTIGATING)
+        )
+
+    def get_critical_open_count(self) -> int:
+        return sum(
+            1
+            for a in self._alerts
+            if a.priority == AlertPriority.CRITICAL
+            and a.status in (AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED, AlertStatus.INVESTIGATING)
+        )
+
     def acknowledge_alert(self, alert_id: str, user: str) -> bool:
-        """Acknowledge une alerte."""
         for alert in self._alerts:
             if alert.id == alert_id and alert.status == AlertStatus.OPEN:
                 alert.status = AlertStatus.ACKNOWLEDGED
@@ -135,9 +140,8 @@ class AlertService:
                 alert.acknowledged_at = datetime.now()
                 return True
         return False
-    
+
     def update_alert_status(self, alert_id: str, status: AlertStatus, user: str) -> bool:
-        """Met à jour le statut d'une alerte."""
         for alert in self._alerts:
             if alert.id == alert_id:
                 alert.status = status
@@ -146,19 +150,219 @@ class AlertService:
                     alert.resolved_at = datetime.now()
                 return True
         return False
-    
+
     def get_alert_statistics(self) -> dict:
-        """Retourne des statistiques sur les alertes."""
-        total = len(self._alerts)
-        open_count = len([a for a in self._alerts if a.status == AlertStatus.OPEN])
-        critical_count = len([a for a in self._alerts if a.priority == AlertPriority.CRITICAL])
-        high_count = len([a for a in self._alerts if a.priority == AlertPriority.HIGH])
-        
         return {
-            "total": total,
-            "open": open_count,
-            "critical": critical_count,
-            "high": high_count,
-            "medium": len([a for a in self._alerts if a.priority == AlertPriority.MEDIUM]),
-            "low": len([a for a in self._alerts if a.priority == AlertPriority.LOW])
+            "total": len(self._alerts),
+            "open": sum(1 for a in self._alerts if a.status == AlertStatus.OPEN),
+            "critical": sum(1 for a in self._alerts if a.priority == AlertPriority.CRITICAL),
+            "high": sum(1 for a in self._alerts if a.priority == AlertPriority.HIGH),
+            "medium": sum(1 for a in self._alerts if a.priority == AlertPriority.MEDIUM),
+            "low": sum(1 for a in self._alerts if a.priority == AlertPriority.LOW),
         }
+
+
+    def simulate_critical_burst(self, count: int = 3) -> list:
+        """Force-create N critical alerts immediately (for demo / tests)."""
+        import random as _rnd
+        created = []
+        pool = [s for s in _SCENARIOS if s["priority"] == AlertPriority.CRITICAL]
+        if not pool:
+            pool = _SCENARIOS
+        for _ in range(max(1, min(count, 10))):
+            scenario = _rnd.choice(pool)
+            confidence = scenario.get("confidence", 0.95)
+            self._counter += 1
+            alert = Alert(
+                id=f"ALRT-{self._counter}",
+                title=scenario["title"],
+                description=f"{scenario['description']} (AI conf: {confidence * 100:.1f}%)",
+                priority=AlertPriority.CRITICAL,
+                status=AlertStatus.OPEN,
+                alert_type=scenario["alert_type"],
+                camera_id=scenario["camera_id"],
+                camera_name=scenario["camera_name"],
+                location=scenario["location"],
+                timestamp=datetime.now(),
+            )
+            self._alerts.insert(0, alert)
+            payload = alert.to_dict()
+            payload["confidence"] = round(confidence * 100, 1)
+            if self._on_new_alert:
+                self._on_new_alert(payload)
+            created.append(payload)
+        return created
+
+    def tick_realtime(self) -> Optional[dict]:
+        if not self._config.enabled:
+            return None
+        # Higher chance overall; bias toward critical (~50% of generated alerts)
+        if random.random() > 0.55:
+            return None
+
+        prefer_critical = random.random() < 0.50
+        pool = [s for s in _SCENARIOS if s["priority"] == AlertPriority.CRITICAL] if prefer_critical else _SCENARIOS
+        if not pool:
+            pool = _SCENARIOS
+        scenario = random.choice(pool)
+
+        type_map = {
+            AlertType.PERSON: self._config.enable_person,
+            AlertType.VEHICLE: self._config.enable_vehicle,
+            AlertType.INTRUSION: self._config.enable_intrusion,
+            AlertType.MOTION: self._config.enable_motion,
+            AlertType.SYSTEM: self._config.enable_system,
+            AlertType.OTHER: True,
+        }
+        if not type_map.get(scenario["alert_type"], True):
+            return None
+
+        confidence = scenario.get("confidence", random.uniform(0.6, 0.99))
+        if confidence < self._config.min_confidence:
+            return None
+        if self.get_open_count() >= self._config.max_open_alerts:
+            return None
+
+        self._counter += 1
+        alert = Alert(
+            id=f"ALRT-{self._counter}",
+            title=scenario["title"],
+            description=f"{scenario['description']} (AI conf: {confidence * 100:.1f}%)",
+            priority=scenario["priority"],
+            status=AlertStatus.OPEN,
+            alert_type=scenario["alert_type"],
+            camera_id=scenario["camera_id"],
+            camera_name=scenario["camera_name"],
+            location=scenario["location"],
+            timestamp=datetime.now(),
+        )
+        self._alerts.insert(0, alert)
+        payload = alert.to_dict()
+        payload["confidence"] = round(confidence * 100, 1)
+        if self._on_new_alert:
+            self._on_new_alert(payload)
+        return payload
+
+
+    def inject_alert(
+        self,
+        title: str,
+        description: str,
+        priority: str = "HIGH",
+        alert_type: str = "INTRUSION",
+        camera_id: str = "CAM-00",
+        camera_name: str = "Manual",
+        location: str = "Unknown",
+    ) -> dict:
+        self._counter += 1
+        try:
+            prio = AlertPriority(priority)
+        except ValueError:
+            prio = AlertPriority.HIGH
+        try:
+            atype = AlertType(alert_type)
+        except ValueError:
+            atype = AlertType.OTHER
+        alert = Alert(
+            id=f"ALRT-{self._counter}",
+            title=title,
+            description=description,
+            priority=prio,
+            status=AlertStatus.OPEN,
+            alert_type=atype,
+            camera_id=camera_id,
+            camera_name=camera_name,
+            location=location,
+            timestamp=datetime.now(),
+        )
+        self._alerts.insert(0, alert)
+        payload = alert.to_dict()
+        if self._on_new_alert:
+            self._on_new_alert(payload)
+        return payload
+
+    def _generate_mock_data(self):
+        now = datetime.now()
+        self._alerts = [
+            Alert(
+                id="ALRT-89214",
+                title="Unauthorized Access Detected",
+                description="Unauthorized access at Server Room A - Zone 4.",
+                priority=AlertPriority.CRITICAL,
+                status=AlertStatus.OPEN,
+                alert_type=AlertType.INTRUSION,
+                camera_id="CAM-SR-04",
+                camera_name="Server Room Corridor",
+                location="Server Room A - Zone 4",
+                timestamp=now - timedelta(minutes=2),
+            ),
+            Alert(
+                id="ALRT-89210",
+                title="Unidentified Person",
+                description="Unidentified individual near Main Office.",
+                priority=AlertPriority.HIGH,
+                status=AlertStatus.ACKNOWLEDGED,
+                alert_type=AlertType.PERSON,
+                camera_id="CAM-MO-01",
+                camera_name="Main Office",
+                location="Main Office",
+                timestamp=now - timedelta(minutes=8),
+                acknowledged_by="admin",
+                acknowledged_at=now - timedelta(minutes=6),
+            ),
+            Alert(
+                id="ALRT-89205",
+                title="Tailgating - Loading Dock 2",
+                description="Possible tailgating event.",
+                priority=AlertPriority.MEDIUM,
+                status=AlertStatus.OPEN,
+                alert_type=AlertType.INTRUSION,
+                camera_id="CAM-LD-02",
+                camera_name="Loading Dock 2",
+                location="Loading Dock 2",
+                timestamp=now - timedelta(minutes=20),
+            ),
+            Alert(
+                id="ALRT-89199",
+                title="Crowd Density",
+                description="Lobby occupancy elevated.",
+                priority=AlertPriority.LOW,
+                status=AlertStatus.RESOLVED,
+                alert_type=AlertType.PERSON,
+                camera_id="CAM-LOB-04",
+                camera_name="Main Lobby",
+                location="Lobby",
+                timestamp=now - timedelta(minutes=40),
+                resolved_by="system",
+                resolved_at=now - timedelta(minutes=30),
+            ),
+            Alert(
+                id="ALRT-89192",
+                title="Perimeter Breach - North Gate",
+                description="Perimeter intrusion pattern matched.",
+                priority=AlertPriority.CRITICAL,
+                status=AlertStatus.ACKNOWLEDGED,
+                alert_type=AlertType.INTRUSION,
+                camera_id="CAM-NG-01",
+                camera_name="North Gate",
+                location="North Gate",
+                timestamp=now - timedelta(hours=1),
+                acknowledged_by="soc",
+                acknowledged_at=now - timedelta(minutes=50),
+            ),
+            Alert(
+                id="ALRT-89185",
+                title="Facial Match - Executive Wing",
+                description="Facial recognition event on executive corridor.",
+                priority=AlertPriority.HIGH,
+                status=AlertStatus.RESOLVED,
+                alert_type=AlertType.PERSON,
+                camera_id="CAM-EX-03",
+                camera_name="Executive Wing",
+                location="Executive Wing",
+                timestamp=now - timedelta(hours=2),
+                resolved_by="admin",
+                resolved_at=now - timedelta(hours=1, minutes=45),
+            ),
+        ]
+        self._counter = 89214

@@ -7,9 +7,10 @@ QtObject {
     // ============================================================
 
     // ---- Layout ----
-    readonly property int sidebarWidth:        240
-    readonly property int headerHeight:        56
-    readonly property int footerStatusHeight:  32
+    readonly property int sidebarWidth:           240
+    readonly property int sidebarCollapsedWidth:  64
+    readonly property int headerHeight:           56
+    readonly property int footerStatusHeight:     32
 
     // ---- Spacing scale ----
     readonly property int spacingXS:           4
@@ -46,6 +47,19 @@ QtObject {
     readonly property int cardHeightM:         100
     readonly property int cardHeightL:         150
     readonly property int cardHeightXL:        200
+    readonly property int cardHeightXXL:       400
+
+    // ---- Spacing aliases (SM/MD/LG naming used by auth + form pages) ----
+    readonly property int spacingSM:           spacingS
+    readonly property int spacingMD:           spacingM
+    readonly property int spacingLG:           spacingL
+
+    // ---- Table column widths ----
+    readonly property int columnWidthS:        150
+    readonly property int columnWidthM:        200
+
+    // ---- Login ----
+    readonly property int loginCardWidth:      400
 
     // ---- Border (standardized to 1px) ----
     readonly property int borderWidth:         1
@@ -60,6 +74,10 @@ QtObject {
     readonly property int dialogWidth:         500
     readonly property int dialogHeight:        500
     readonly property int dialogWidthS:        400
+    readonly property int dialogWidthM:        dialogWidth
+    readonly property int dialogContentHeightS: 150
+    readonly property int dialogContentHeightM: 400
+    readonly property int dialogContentHeightL: 450
 
     // ---- Video ----
     readonly property int videoWidth:          640

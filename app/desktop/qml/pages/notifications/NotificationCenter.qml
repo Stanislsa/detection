@@ -32,7 +32,7 @@ Flickable {
                 spacing: theme ? theme.spacingXS : 4
                 
                 Rectangle {
-                    width: (parent.width - (theme ? theme.spacingXS : 4)) / 3
+                    width: 60
                     height: 32
                     radius: theme ? theme.radiusS : 4
                     color: theme ? theme.primary : "#2563EB"
@@ -42,12 +42,12 @@ Flickable {
                         text: "All"
                         font.pixelSize: theme ? theme.fontSizeXS : 10
                         font.bold: true
-                        color: "#ffffff"
+                        color: theme ? theme.onAccent : "#ffffff"
                     }
                 }
                 
                 Rectangle {
-                    width: (parent.width - (theme ? theme.spacingXS : 4)) / 3
+                    width: 80
                     height: 32
                     radius: theme ? theme.radiusS : 4
                     color: theme ? theme.surface : "#151C28"
@@ -63,7 +63,7 @@ Flickable {
                 }
                 
                 Rectangle {
-                    width: (parent.width - (theme ? theme.spacingXS : 4)) / 3
+                    width: 150
                     height: 32
                     radius: theme ? theme.radiusS : 4
                     color: theme ? theme.surface : "#151C28"
@@ -123,20 +123,20 @@ Flickable {
                         
                         Text {
                             text: "Critical Security Alert"
-                            font.pixelSize: theme ? fontSizeS : 12
+                            font.pixelSize: theme ? theme.fontSizeS : 12
                             font.bold: true
                             color: theme ? theme.textPrimary : "#ffffff"
                         }
                         
                         Text {
                             text: "Unauthorized biometric bypass detected in Server Room A"
-                            font.pixelSize: theme ? fontSizeXS : 10
+                            font.pixelSize: theme ? theme.fontSizeXS : 10
                             color: theme ? theme.textSecondary : "#a0a0a0"
                         }
                         
                         Text {
                             text: "2 min ago"
-                            font.pixelSize: theme ? fontSizeXS : 10
+                            font.pixelSize: theme ? theme.fontSizeXS : 10
                             font.family: theme ? theme.fontFamilyCode : "JetBrains Mono"
                             color: theme ? theme.textDisabled : "#606060"
                         }
@@ -170,20 +170,20 @@ Flickable {
                         
                         Text {
                             text: "Hardware Latency Warning"
-                            font.pixelSize: theme ? fontSizeS : 12
+                            font.pixelSize: theme ? theme.fontSizeS : 12
                             font.bold: true
                             color: theme ? theme.textPrimary : "#ffffff"
                         }
                         
                         Text {
                             text: "Camera Cam-SR-04 experiencing high latency (450ms)"
-                            font.pixelSize: theme ? fontSizeXS : 10
+                            font.pixelSize: theme ? theme.fontSizeXS : 10
                             color: theme ? theme.textSecondary : "#a0a0a0"
                         }
                         
                         Text {
                             text: "15 min ago"
-                            font.pixelSize: theme ? fontSizeXS : 10
+                            font.pixelSize: theme ? theme.fontSizeXS : 10
                             font.family: theme ? theme.fontFamilyCode : "JetBrains Mono"
                             color: theme ? theme.textDisabled : "#606060"
                         }
@@ -217,20 +217,20 @@ Flickable {
                         
                         Text {
                             text: "System Update Complete"
-                            font.pixelSize: theme ? fontSizeS : 12
+                            font.pixelSize: theme ? theme.fontSizeS : 12
                             font.bold: true
                             color: theme ? theme.textPrimary : "#ffffff"
                         }
                         
                         Text {
                             text: "AI Model Vision-LLM-v4 updated successfully"
-                            font.pixelSize: theme ? fontSizeXS : 10
+                            font.pixelSize: theme ? theme.fontSizeXS : 10
                             color: theme ? theme.textSecondary : "#a0a0a0"
                         }
                         
                         Text {
                             text: "1 hour ago"
-                            font.pixelSize: theme ? fontSizeXS : 10
+                            font.pixelSize: theme ? theme.fontSizeXS : 10
                             font.family: theme ? theme.fontFamilyCode : "JetBrains Mono"
                             color: theme ? theme.textDisabled : "#606060"
                         }
@@ -264,20 +264,20 @@ Flickable {
                         
                         Text {
                             text: "New Camera Added"
-                            font.pixelSize: theme ? fontSizeS : 12
+                            font.pixelSize: theme ? theme.fontSizeS : 12
                             font.bold: true
                             color: theme ? theme.textPrimary : "#ffffff"
                         }
                         
                         Text {
                             text: "Cam-PK-12 successfully provisioned and online"
-                            font.pixelSize: theme ? fontSizeXS : 10
+                            font.pixelSize: theme ? theme.fontSizeXS : 10
                             color: theme ? theme.textSecondary : "#a0a0a0"
                         }
                         
                         Text {
                             text: "2 hours ago"
-                            font.pixelSize: theme ? fontSizeXS : 10
+                            font.pixelSize: theme ? theme.fontSizeXS : 10
                             font.family: theme ? theme.fontFamilyCode : "JetBrains Mono"
                             color: theme ? theme.textDisabled : "#606060"
                         }
@@ -303,12 +303,12 @@ Flickable {
                     
                     Text {
                         text: "📅"
-                        font.pixelSize: theme ? fontSizeL : 16
+                        font.pixelSize: theme ? theme.fontSizeL : 16
                     }
                     
                     Text {
                         text: "Upcoming Maintenance"
-                        font.pixelSize: theme ? fontSizeL : 16
+                        font.pixelSize: theme ? theme.fontSizeL : 16
                         font.bold: true
                         color: theme ? theme.textPrimary : "#ffffff"
                     }
@@ -329,14 +329,14 @@ Flickable {
                         
                         Text {
                             text: "JAN 18"
-                            font.pixelSize: theme ? fontSizeS : 12
+                            font.pixelSize: theme ? theme.fontSizeS : 12
                             font.bold: true
                             color: theme ? theme.primary : "#2563EB"
                         }
                         
                         Text {
                             text: "02:00 UTC"
-                            font.pixelSize: theme ? fontSizeXS : 10
+                            font.pixelSize: theme ? theme.fontSizeXS : 10
                             font.family: theme ? theme.fontFamilyCode : "JetBrains Mono"
                             color: theme ? theme.textSecondary : "#a0a0a0"
                         }
@@ -352,14 +352,14 @@ Flickable {
 
                         Text {
                             text: "Server Room A - Zone 4"
-                            font.pixelSize: theme ? fontSizeS : 12
+                            font.pixelSize: theme ? theme.fontSizeS : 12
                             font.bold: true
                             color: theme ? theme.textPrimary : "#ffffff"
                         }
                         
                         Text {
                             text: "Scheduled camera firmware update - 4 cameras affected"
-                            font.pixelSize: theme ? fontSizeXS : 10
+                            font.pixelSize: theme ? theme.fontSizeXS : 10
                             color: theme ? theme.textSecondary : "#a0a0a0"
                         }
                     }

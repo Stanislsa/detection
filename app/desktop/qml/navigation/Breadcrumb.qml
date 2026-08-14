@@ -21,7 +21,7 @@ Row {
                 theme: control.theme
                 label: modelData
                 isLast: index === control.items.length - 1
-                onClicked: (index) => control.itemClicked(index)
+                onClicked: control.itemClicked(index)
             }
 
             Text {

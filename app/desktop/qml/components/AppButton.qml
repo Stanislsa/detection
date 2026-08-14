@@ -10,6 +10,7 @@ Button {
     property var theme
     property string variant: "primary"          // primary | secondary | ghost | danger
     property string iconGlyph: ""               // optional leading glyph (avoid FINAL `icon` on Button)
+    property string iconName: ""                 // SVG icon name from assets/icons
 
     readonly property bool _isPrimary: variant === "primary"
     readonly property bool _isSecondary: variant === "secondary"
@@ -62,8 +63,17 @@ Button {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
 
+        AppIcon {
+            visible: control.iconName !== ""
+            width: theme ? theme.iconSizeS : 14
+            height: theme ? theme.iconSizeS : 14
+            iconName: control.iconName
+            iconColor: control._textColor
+            theme: control.theme
+            anchors.verticalCenter: parent.verticalCenter
+        }
         Text {
-            visible: control.iconGlyph !== ""
+            visible: control.iconGlyph !== "" && control.iconName === ""
             text: control.iconGlyph
             color: control._textColor
             font.pixelSize: theme ? theme.fontSizeM : 13
@@ -77,6 +87,7 @@ Button {
             font.weight: theme ? theme.weightSemiBold : Font.DemiBold
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
+            anchors.verticalCenter: parent.verticalCenter
         }
     }
 }

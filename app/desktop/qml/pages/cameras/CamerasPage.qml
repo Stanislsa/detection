@@ -3,649 +3,229 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../../theme"
 import "../../components"
-import "../../cards"
-import "../../video"
 import "../../dialogs"
 
-Flickable {
+Item {
     id: control
-    
     property var theme
     property var cameraController
-    
-    contentWidth: parent.width
-    contentHeight: contentColumn.height + (theme ? theme.spacingXL : 48)
-    clip: true
-    
-    Column {
-        id: contentColumn
-        width: parent.width
-        spacing: theme ? theme.spacingL : 24
-        anchors.top: parent.top
-        anchors.topMargin: theme ? theme.spacingL : 24
-        
-        // Header row
+
+    property string viewMode: "grid"  // grid | list
+    property string locFilter: "All"
+
+    readonly property var cameras: [
+        { name: "MAIN LOBBY ENTRY", loc: "Building A - North", res: "4K", rec: true, live: true, offline: false },
+        { name: "WAREHOUSE LOADING DOCK", loc: "Building B - Logistics", res: "1080P", rec: true, live: true, offline: false },
+        { name: "SERVER ROOM CORRIDOR", loc: "Building A - Data Center", res: "2K", rec: false, live: true, offline: false },
+        { name: "PARKING WEST ENTRANCE", loc: "Exterior - Zone 4", res: "1080P", rec: true, live: true, offline: false },
+        { name: "PERIMETER FENCE LINE", loc: "Exterior - East Wall", res: "720P", rec: false, live: false, offline: true },
+        { name: "OFFICE CORRIDOR 4C", loc: "Building C - Floor 4", res: "1080P", rec: true, live: true, offline: false }
+    ]
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: theme ? theme.spacingL : 24
+        spacing: theme ? theme.spacingM : 16
+
         RowLayout {
-            width: parent.width
-            spacing: theme ? theme.spacingM : 16
-            
+            Layout.fillWidth: true
             Text {
-                id: camerasText
-                text: "Cameras"
-                font.pixelSize: theme ? theme.fontSizeXXL : 32
-                font.bold: true
-                color: theme ? theme.textPrimary : "#ffffff"
-                Layout.alignment: Qt.AlignLeft
+                text: "Camera Management"
+                font.pixelSize: theme ? theme.fontSizeXXL : 20
+                font.weight: Font.Bold
+                color: theme ? theme.textPrimary : "#E5E7EB"
             }
-            
-            Item {
-                Layout.fillWidth: true
+            Rectangle {
+                width: devLab.implicitWidth + 14; height: 22; radius: 11
+                color: theme ? theme.surfaceElevated : "#1E293B"
+                border.color: theme ? theme.border : "#1E293B"; border.width: 1
+                Text { id: devLab; anchors.centerIn: parent; text: "6 Devices"; font.pixelSize: 11; color: theme ? theme.textSecondary : "#94A3B8" }
             }
-            
-            AppButton {
-                id: addButton
-                text: "+ Add Camera"
-                backgroundColor: theme ? theme.primary : "#0078d4"
-                theme: control.theme
-                Layout.alignment: Qt.AlignRight
-                onClicked: addCameraDialog.open()
+            Item { Layout.fillWidth: true }
+            AppInput {
+                Layout.preferredWidth: 200; Layout.preferredHeight: 32
+                theme: control.theme; placeholderText: "Filter streams…"; leadingIcon: "search"
             }
+            AppIconButton { iconName: "grid"; theme: control.theme; onClicked: control.viewMode = "grid" }
+            AppIconButton { iconName: "list"; theme: control.theme; onClicked: control.viewMode = "list" }
+            AppButton { text: "FILTER"; variant: "secondary"; theme: control.theme; }
+            AppButton { text: "ACTIONS"; variant: "primary"; theme: control.theme }
         }
-        
-        // Sidebar with Metrics and Filters
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: parent.width - (theme ? theme.spacingXL : 48) * 2
+
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
             spacing: theme ? theme.spacingM : 16
-            
-            // Left Sidebar
-            AppCard {
-                width: 200
-                height: theme ? theme.cardHeightXL : 400
-                theme: control.theme
-                
+
+            // Left metrics sidebar
+            Rectangle {
+                Layout.preferredWidth: 200
+                Layout.fillHeight: true
+                radius: 4
+                color: theme ? theme.surface : "#151C28"
+                border.color: theme ? theme.border : "#1E293B"; border.width: 1
+
                 Column {
-                    anchors.fill: parent
-                    anchors.margins: theme ? theme.spacingM : 16
-                    spacing: theme ? theme.spacingM : 16
-                    
-                    // Metrics
+                    anchors.fill: parent; anchors.margins: 12; spacing: 16
+
+                    Text { text: "SYSTEM METRICS"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+
                     Column {
-                        width: parent.width
-                        spacing: theme ? theme.spacingS : 8
-                        
-                        Text {
-                            text: "AI Load"
-                            font.pixelSize: theme ? theme.fontSizeXS : 10
-                            color: theme ? theme.textSecondary : "#a0a0a0"
-                        }
-                        
-                        Text {
-                            text: "24%"
-                            font.pixelSize: theme ? theme.fontSizeL : 16
-                            font.bold: true
-                            color: theme ? theme.success : "#10B981"
-                        }
-                        
-                        Rectangle {
+                        width: parent.width; spacing: 6
+                        Row {
                             width: parent.width
-                            height: 4
-                            radius: 2
-                            color: theme ? theme.surface : "#151C28"
-                            
-                            Rectangle {
-                                width: parent.width * 0.24
-                                height: parent.height
-                                radius: 2
-                                color: theme ? theme.success : "#10B981"
-                            }
+                            AppIcon { width: 14; height: 14; iconName: "cpu"; iconColor: theme ? theme.textSecondary : "#94A3B8"; anchors.verticalCenter: parent.verticalCenter }
+                            Text { text: "  AI Load"; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8"; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 50 }
+                            Text { text: "24%"; font.pixelSize: 12; font.weight: Font.Bold; color: theme ? theme.success : "#10B981"; anchors.verticalCenter: parent.verticalCenter }
                         }
-                    }
-                    
-                    Column {
-                        width: parent.width
-                        spacing: theme ? theme.spacingS : 8
-                        
-                        Text {
-                            text: "Storage"
-                            font.pixelSize: theme ? theme.fontSizeXS : 10
-                            color: theme ? theme.textSecondary : "#a0a0a0"
-                        }
-                        
-                        Text {
-                            text: "82%"
-                            font.pixelSize: theme ? theme.fontSizeL : 16
-                            font.bold: true
-                            color: theme ? theme.warning : "#F59E0B"
-                        }
-                        
                         Rectangle {
+                            width: parent.width; height: 4; radius: 2; color: theme ? theme.backgroundAlt : "#0F172A"
+                            Rectangle { width: parent.width * 0.24; height: parent.height; radius: 2; color: theme ? theme.success : "#10B981" }
+                        }
+                    }
+                    Column {
+                        width: parent.width; spacing: 6
+                        Row {
                             width: parent.width
-                            height: 4
-                            radius: 2
-                            color: theme ? theme.surface : "#151C28"
-                            
-                            Rectangle {
-                                width: parent.width * 0.82
-                                height: parent.height
-                                radius: 2
-                                color: theme ? theme.warning : "#F59E0B"
-                            }
+                            AppIcon { width: 14; height: 14; iconName: "hard-drive"; iconColor: theme ? theme.textSecondary : "#94A3B8"; anchors.verticalCenter: parent.verticalCenter }
+                            Text { text: "  Storage"; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8"; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 50 }
+                            Text { text: "82%"; font.pixelSize: 12; font.weight: Font.Bold; color: theme ? theme.warning : "#F59E0B"; anchors.verticalCenter: parent.verticalCenter }
+                        }
+                        Rectangle {
+                            width: parent.width; height: 4; radius: 2; color: theme ? theme.backgroundAlt : "#0F172A"
+                            Rectangle { width: parent.width * 0.82; height: parent.height; radius: 2; color: theme ? theme.warning : "#F59E0B" }
                         }
                     }
-                    
-                    Rectangle {
-                        width: parent.width
-                        height: 1
-                        color: theme ? theme.border : "#1E293B"
+
+                    Text { text: "LOCATIONS"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                    Repeater {
+                        model: [
+                            { n: "Building A", c: 12 }, { n: "Building B", c: 8 },
+                            { n: "Building C", c: 4 }, { n: "Exterior", c: 15 }, { n: "Data Center", c: 6 }
+                        ]
+                        Row {
+                            width: parent.width
+                            Text { text: modelData.n; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8"; width: parent.width - 30 }
+                            Text { text: "" + modelData.c; font.pixelSize: 11; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                        }
                     }
-                    
-                    // Location Filters
-                    Text {
-                        text: "Locations"
-                        font.pixelSize: theme ? theme.fontSizeS : 12
-                        font.bold: true
-                        color: theme ? theme.textPrimary : "#ffffff"
-                    }
-                    
+
+                    Text { text: "STATUS"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
                     Column {
-                        width: parent.width
-                        spacing: theme ? theme.spacingXS : 4
-                        
-                        Row {
-                            spacing: theme ? theme.spacingXS : 4
-                            
-                            Text {
-                                text: "Building A"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            
-                            Rectangle {
-                                width: 20
-                                height: 16
-                                radius: 2
-                                color: theme ? theme.surface : "#151C28"
-                                
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "12"
-                                    font.pixelSize: theme ? fontSizeXS : 10
-                                    color: theme ? theme.textPrimary : "#ffffff"
-                                }
-                            }
-                        }
-                        
-                        Row {
-                            spacing: theme ? theme.spacingXS : 4
-                            
-                            Text {
-                                text: "Building B"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            
-                            Rectangle {
-                                width: 20
-                                height: 16
-                                radius: 2
-                                color: theme ? theme.surface : "#151C28"
-                                
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "8"
-                                    font.pixelSize: theme ? fontSizeXS : 10
-                                    color: theme ? theme.textPrimary : "#ffffff"
-                                }
-                            }
-                        }
-                        
-                        Row {
-                            spacing: theme ? theme.spacingXS : 4
-                            
-                            Text {
-                                text: "Building C"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            
-                            Rectangle {
-                                width: 20
-                                height: 16
-                                radius: 2
-                                color: theme ? theme.surface : "#151C28"
-                                
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "4"
-                                    font.pixelSize: theme ? fontSizeXS : 10
-                                    color: theme ? theme.textPrimary : "#ffffff"
-                                }
-                            }
-                        }
-                        
-                        Row {
-                            spacing: theme ? theme.spacingXS : 4
-                            
-                            Text {
-                                text: "Exterior"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            
-                            Rectangle {
-                                width: 20
-                                height: 16
-                                radius: 2
-                                color: theme ? theme.surface : "#151C28"
-                                
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "15"
-                                    font.pixelSize: theme ? fontSizeXS : 10
-                                    color: theme ? theme.textPrimary : "#ffffff"
-                                }
-                            }
-                        }
-                        
-                        Row {
-                            spacing: theme ? theme.spacingXS : 4
-                            
-                            Text {
-                                text: "Data Center"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            
-                            Rectangle {
-                                width: 20
-                                height: 16
-                                radius: 2
-                                color: theme ? theme.surface : "#151C28"
-                                
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "6"
-                                    font.pixelSize: theme ? fontSizeXS : 10
-                                    color: theme ? theme.textPrimary : "#ffffff"
-                                }
-                            }
-                        }
+                        spacing: 6
+                        Row { spacing: 6; Rectangle { width: 8; height: 8; radius: 4; color: theme ? theme.success : "#10B981"; anchors.verticalCenter: parent.verticalCenter }; Text { text: "Operational  32"; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" } }
+                        Row { spacing: 6; Rectangle { width: 8; height: 8; radius: 4; color: theme ? theme.critical : "#EF4444"; anchors.verticalCenter: parent.verticalCenter }; Text { text: "Alert Triggered  2"; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" } }
+                        Row { spacing: 6; Rectangle { width: 8; height: 8; radius: 4; color: theme ? theme.textMuted : "#64748B"; anchors.verticalCenter: parent.verticalCenter }; Text { text: "Offline  5"; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" } }
                     }
-                    
-                    Rectangle {
-                        width: parent.width
-                        height: 1
-                        color: theme ? theme.border : "#1E293B"
-                    }
-                    
-                    // Status Filter
-                    Text {
-                        text: "Status Filter"
-                        font.pixelSize: theme ? theme.fontSizeS : 12
-                        font.bold: true
-                        color: theme ? theme.textPrimary : "#ffffff"
-                    }
-                    
-                    Column {
-                        width: parent.width
-                        spacing: theme ? theme.spacingXS : 4
-                        
-                        Row {
-                            spacing: theme ? theme.spacingXS : 4
-                            
-                            Rectangle {
-                                width: 8
-                                height: 8
-                                radius: 4
-                                color: theme ? theme.success : "#10B981"
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            
-                            Text {
-                                text: "Operational"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            
-                            Item {
-                                width: 1
-                                height: parent.height
-                            }
-                            
-                            Text {
-                                text: "32"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textPrimary : "#ffffff"
-                            }
-                        }
-                        
-                        Row {
-                            spacing: theme ? theme.spacingXS : 4
-                            
-                            Rectangle {
-                                width: 8
-                                height: 8
-                                radius: 4
-                                color: theme ? theme.danger : "#EF4444"
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            
-                            Text {
-                                text: "Alert Triggered"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            
-                            Item {
-                                width: 1
-                                height: parent.height
-                            }
-                            
-                            Text {
-                                text: "2"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textPrimary : "#ffffff"
-                            }
-                        }
-                        
-                        Row {
-                            spacing: theme ? theme.spacingXS : 4
-                            
-                            Rectangle {
-                                width: 8
-                                height: 8
-                                radius: 4
-                                color: theme ? theme.textDisabled : "#606060"
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            
-                            Text {
-                                text: "Offline"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            
-                            Item {
-                                width: 1
-                                height: parent.height
-                            }
-                            
-                            Text {
-                                text: "5"
-                                font.pixelSize: theme ? fontSizeXS : 10
-                                color: theme ? theme.textPrimary : "#ffffff"
-                            }
-                        }
-                    }
+
+                    Item { height: 20; width: 1 }
+                    AppButton { width: parent.width; text: "FLEET SETTINGS"; variant: "secondary"; theme: control.theme }
                 }
             }
-            
-            // Camera Grid
-            AppCard {
+
+            // Camera grid
+            GridLayout {
                 Layout.fillWidth: true
-                height: theme ? theme.cardHeightXL : 400
-                theme: control.theme
-                
-                Column {
-                    anchors.fill: parent
-                    anchors.margins: theme ? theme.spacingM : 16
-                    spacing: theme ? theme.spacingM : 16
-                    
-                    GridLayout {
-                        width: parent.width
-                        height: parent.height - 60
-                        columns: 3
-                        columnSpacing: theme ? theme.spacingS : 8
-                        rowSpacing: theme ? theme.spacingS : 8
-                        
-                        // 5 Active Cameras
-                        Repeater {
-                            model: 5
-                            
+                Layout.fillHeight: true
+                columns: width > 700 ? 3 : 2
+                rowSpacing: 10; columnSpacing: 10
+
+                Repeater {
+                    model: control.cameras
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.minimumHeight: 140
+                        radius: 4
+                        color: "#0A0C10"
+                        border.color: modelData.offline ? (theme ? theme.textMuted : "#64748B") : (theme ? theme.border : "#1E293B")
+                        border.width: 1
+                        clip: true
+
+                        Rectangle {
+                            anchors.fill: parent
+                            gradient: Gradient {
+                                GradientStop { position: 0; color: modelData.offline ? "#1E293B" : "#0F172A" }
+                                GradientStop { position: 1; color: "#1E293B" }
+                            }
+                            opacity: modelData.offline ? 0.5 : 1
+                        }
+
+                        // top badges
+                        Row {
+                            anchors.left: parent.left; anchors.top: parent.top; anchors.margins: 8; spacing: 6
                             Rectangle {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                color: theme ? theme.surfaceElevated : "#1E293B"
-                                radius: theme ? theme.radiusS : 4
-                                border.color: theme ? theme.border : "#1E293B"
-                                border.width: 1
-                                
-                                Column {
-                                    anchors.fill: parent
-                                    spacing: theme ? theme.spacingXS : 4
-                                    
-                                    Row {
-                                        width: parent.width
-                                        spacing: theme ? theme.spacingXS : 4
-                                        
-                                        Rectangle {
-                                            width: 30
-                                            height: 16
-                                            radius: 2
-                                            color: theme ? theme.danger : "#EF4444"
-                                            
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: "REC"
-                                                font.pixelSize: theme ? fontSizeXS : 8
-                                                font.bold: true
-                                                color: "#ffffff"
-                                            }
-                                        }
-                                        
-                                        Item {
-                                            width: 1
-                                            height: parent.height
-                                        }
-                                        
-                                        Text {
-                                            text: ["4K", "1080p", "720p", "4K", "1080p"][index]
-                                            font.pixelSize: theme ? fontSizeXS : 10
-                                            font.family: theme ? theme.fontFamilyCode : "JetBrains Mono"
-                                            color: theme ? theme.textSecondary : "#a0a0a0"
-                                        }
-                                    }
-                                    
-                                    Rectangle {
-                                        width: parent.width
-                                        height: parent.height - 40
-                                        color: "#000000"
-                                        radius: theme ? theme.radiusS : 4
-                                    }
-                                    
-                                    Text {
-                                        text: ["LOBBY_EAST_01", "WH_DOCK_07", "SERVER_COR_04", "PARK_EXT_12", "RETAIL_FLR_02"][index]
-                                        font.pixelSize: theme ? fontSizeXS : 10
-                                        font.family: theme ? theme.fontFamilyCode : "JetBrains Mono"
-                                        color: theme ? theme.textSecondary : "#a0a0a0"
-                                    }
-                                }
+                                width: 8; height: 8; radius: 4
+                                color: modelData.offline ? "#64748B" : (modelData.live ? "#10B981" : "#F59E0B")
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: modelData.name
+                                font.pixelSize: 11; font.weight: Font.DemiBold; color: "#E5E7EB"
+                                anchors.verticalCenter: parent.verticalCenter
                             }
                         }
-                        
-                        // 1 Offline Camera
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            color: theme ? theme.surface : "#151C28"
-                            radius: theme ? theme.radiusS : 4
-                            border.color: theme ? theme.border : "#1E293B"
-                            border.width: 1
-                            
-                            Column {
-                                anchors.centerIn: parent
-                                spacing: theme ? theme.spacingS : 8
-                                
-                                Text {
-                                    text: "📡"
-                                    font.pixelSize: theme ? fontSizeXL : 32
-                                    color: theme ? theme.textDisabled : "#606060"
-                                }
-                                
-                                Text {
-                                    text: "PERIMETER FENCE LINE"
-                                    font.pixelSize: theme ? fontSizeXS : 10
-                                    font.family: theme ? theme.fontFamilyCode : "JetBrains Mono"
-                                    color: theme ? theme.textDisabled : "#606060"
-                                }
-                                
-                                Text {
-                                    text: "SIGNAL LOST"
-                                    font.pixelSize: theme ? fontSizeXS : 10
-                                    color: theme ? theme.textDisabled : "#606060"
-                                }
+                        Row {
+                            anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 8; spacing: 4
+                            Rectangle {
+                                visible: modelData.rec; width: recT.implicitWidth + 10; height: 18; radius: 3
+                                color: "#EF4444"; Text { id: recT; anchors.centerIn: parent; text: "REC"; font.pixelSize: 9; font.weight: Font.Bold; color: "#FFF" }
+                            }
+                            Rectangle {
+                                width: resT.implicitWidth + 10; height: 18; radius: 3
+                                color: "#00000088"; border.color: "#FFFFFF44"; border.width: 1
+                                Text { id: resT; anchors.centerIn: parent; text: modelData.res; font.pixelSize: 9; color: "#E5E7EB" }
                             }
                         }
-                        
-                        // 1 Empty Camera Slot
+
+                        // offline overlay
+                        Column {
+                            visible: modelData.offline
+                            anchors.centerIn: parent; spacing: 6
+                            AppIcon { anchors.horizontalCenter: parent.horizontalCenter; width: 28; height: 28; iconName: "wifi-off"; iconColor: "#64748B" }
+                            Text { anchors.horizontalCenter: parent.horizontalCenter; text: "CONNECTION LOST"; font.pixelSize: 11; font.family: theme ? theme.fontFamilyMono : "monospace"; color: "#94A3B8" }
+                        }
+
+                        // footer
                         Rectangle {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            color: theme ? theme.surface : "#151C28"
-                            radius: theme ? theme.radiusS : 4
-                            border.color: theme ? theme.border : "#1E293B"
-                            border.width: 1
-                            border.style: Qt.DashLine
-                            
-                            Column {
-                                anchors.centerIn: parent
-                                spacing: theme ? theme.spacingS : 8
-                                
-                                Text {
-                                    text: "+"
-                                    font.pixelSize: theme ? fontSizeXXL : 32
-                                    color: theme ? theme.textDisabled : "#606060"
-                                }
-                                
-                                AppButton {
-                                    text: "MOUNT NEW STREAM"
-                                    theme: control.theme
-                                }
+                            anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
+                            height: 28; color: "#00000099"
+                            Text {
+                                anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: 8
+                                text: modelData.loc; font.pixelSize: 10; color: "#CBD5E1"; elide: Text.ElideRight; width: parent.width - 16
                             }
                         }
                     }
                 }
+
+                // Mount new stream tile
+                Rectangle {
+                    Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 140
+                    radius: 4; color: "transparent"
+                    border.color: theme ? theme.borderStrong : "#334155"; border.width: 1
+                    border.style: Qt.DashLine // may not work on all; visual ok
+                    Column {
+                        anchors.centerIn: parent; spacing: 8
+                        AppIcon { anchors.horizontalCenter: parent.horizontalCenter; width: 28; height: 28; iconName: "plus"; iconColor: theme ? theme.textMuted : "#64748B" }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "MOUNT NEW STREAM"; font.pixelSize: 11; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                    }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: addCamDialog.open() }
+                }
             }
         }
-        
-        // Action Bar
-        AppCard {
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: parent.width - (theme ? theme.spacingXL : 48) * 2
-            height: theme ? theme.cardHeightS : 60
-            theme: control.theme
-            
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: theme ? theme.spacingM : 16
-                spacing: theme ? theme.spacingM : 16
-                
-                AppButton {
-                    text: "FLEET SETTINGS"
-                    theme: control.theme
-                    Layout.alignment: Qt.AlignLeft
-                }
-                
-                Item {
-                    Layout.fillWidth: true
-                }
-                
-                Rectangle {
-                    width: 8
-                    height: 8
-                    radius: 4
-                    color: theme ? theme.success : "#10B981"
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-                
-                Text {
-                    text: "LIVE STREAM ACTIVE"
-                    font.pixelSize: theme ? theme.fontSizeXS : 10
-                    font.family: theme ? theme.fontFamilyCode : "JetBrains Mono"
-                    color: theme ? theme.textSecondary : "#a0a0a0"
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-                
-                Item {
-                    width: 20
-                }
-                
-                Text {
-                    text: "AI Detection:"
-                    font.pixelSize: theme ? theme.fontSizeXS : 10
-                    color: theme ? theme.textSecondary : "#a0a0a0"
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-                
-                Rectangle {
-                    width: 8
-                    height: 8
-                    radius: 4
-                    color: theme ? theme.success : "#10B981"
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-                
-                Text {
-                    text: "Enabled"
-                    font.pixelSize: theme ? theme.fontSizeXS : 10
-                    color: theme ? theme.textSecondary : "#a0a0a0"
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-                
-                Item {
-                    width: 20
-                }
-                
-                Text {
-                    text: "Latency: 142ms"
-                    font.pixelSize: theme ? theme.fontSizeXS : 10
-                    font.family: theme ? theme.fontFamilyCode : "JetBrains Mono"
-                    color: theme ? theme.textSecondary : "#a0a0a0"
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-                
-                Item {
-                    width: 20
-                }
-                
-                AppButton {
-                    text: "🔊"
-                    theme: control.theme
-                    Layout.alignment: Qt.AlignRight
-                }
-                
-                AppButton {
-                    text: "⛶"
-                    theme: control.theme
-                    Layout.alignment: Qt.AlignRight
-                }
-            }
+
+        // Footer status
+        Row {
+            spacing: 16
+            Rectangle { width: 8; height: 8; radius: 4; color: theme ? theme.success : "#10B981"; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: "LIVE STREAM ACTIVE"; font.pixelSize: 11; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textSecondary : "#94A3B8"; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: "AI Detection: Enabled"; font.pixelSize: 11; color: theme ? theme.textMuted : "#64748B"; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: "Latency: 142ms"; font.pixelSize: 11; color: theme ? theme.textMuted : "#64748B"; anchors.verticalCenter: parent.verticalCenter }
         }
     }
-    
-    // Dialogs
+
     AddCameraDialog {
-        id: addCameraDialog
+        id: addCamDialog
         theme: control.theme
-        onCameraAdded: function(name, url, location) {
-            // Handle camera addition
-            console.log("Camera added:", name, url, location)
-        }
-    }
-    
-    EditCameraDialog {
-        id: editCameraDialog
-        theme: control.theme
-        cameraId: "cam1"
-        cameraName: "Camera 1"
-        cameraUrl: "rtsp://example.com/stream"
-        location: "Zone A"
-        onCameraUpdated: function(id, name, url, location) {
-            console.log("Camera updated:", id, name, url, location)
-        }
-        onCameraDeleted: function(id) {
-            console.log("Camera deleted:", id)
-        }
     }
 }

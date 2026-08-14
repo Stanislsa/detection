@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import "."
 
 /*
  * AppBadge — solid/outline/subtle variants. 4px radius. Optional
@@ -30,11 +31,12 @@ Rectangle {
         id: layout
         anchors.centerIn: parent
         spacing: 4
-        Text {
+        AppIcon {
             visible: control.icon !== ""
-            text: control.icon
-            font.pixelSize: control.theme ? control.theme.fontSizeXS : 10
-            color: control._resolvedText
+            width: control.theme ? control.theme.fontSizeS : 12
+            height: width
+            iconName: control.icon
+            iconColor: control._resolvedText
             anchors.verticalCenter: parent.verticalCenter
         }
         Text {

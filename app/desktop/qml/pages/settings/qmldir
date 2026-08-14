@@ -1,0 +1,8 @@
+AISettings 1.0 AISettings.qml
+CameraSettings 1.0 CameraSettings.qml
+GeneralSettings 1.0 GeneralSettings.qml
+NotificationSettings 1.0 NotificationSettings.qml
+SecuritySettings 1.0 SecuritySettings.qml
+SettingsPage 1.0 SettingsPage.qml
+StorageSettings 1.0 StorageSettings.qml
+TelegramSettings 1.0 TelegramSettings.qml

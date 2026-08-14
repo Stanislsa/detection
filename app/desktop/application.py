@@ -1,14 +1,17 @@
 """
-Application principale PyQt6 avec support QML.
+Application principale PyQt6 + QML — portable Linux / Windows.
 """
+
+from __future__ import annotations
 
 import os
 import sys
 from pathlib import Path
 
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import QUrl, QObject, pyqtSlot, pyqtSignal, pyqtProperty
+from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtQml import QQmlApplicationEngine
-from PyQt6.QtCore import QUrl
+from PyQt6.QtWidgets import QApplication
 
 from app.desktop.controllers.auth_controller import AuthController
 from app.desktop.controllers.alert_controller import AlertController
@@ -28,9 +31,57 @@ from app.desktop.services.settings_service import SettingsService
 from app.desktop.services.service_health_service import ServiceHealthService
 from app.desktop.services.user_service import UserService
 from app.desktop.navigation.router import Router
+from app.desktop.services.push_notification_service import PushNotificationService
+from app.desktop.services.telegram_service import TelegramService
+from app.desktop.controllers.telegram_controller import TelegramController
+from app.desktop.services.android_permissions import AndroidPermissionHelper
+from app.desktop.models.notification_model import NotificationType, NotificationCategory
 
-# Force le style Basic pour éviter les problèmes de DLL Windows
-os.environ["QT_QUICK_CONTROLS_STYLE"] = "Basic"
+# Force Basic style before any Qt Quick Controls instantiation
+os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Basic")
+
+DESKTOP_DIR = Path(__file__).resolve().parent
+QML_DIR = DESKTOP_DIR / "qml"
+ASSETS_DIR = DESKTOP_DIR / "assets"
+ICONS_DIR = ASSETS_DIR / "icons"
+
+
+class AppPaths(QObject):
+    """Expose filesystem paths to QML (icons, assets)."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._icons = ICONS_DIR.as_uri() + "/"
+        self._assets = ASSETS_DIR.as_uri() + "/"
+        self._qml = QML_DIR.as_uri() + "/"
+
+    @pyqtProperty(str, constant=True)
+    def icons(self) -> str:
+        return self._icons
+
+    @pyqtProperty(str, constant=True)
+    def assets(self) -> str:
+        return self._assets
+
+    @pyqtProperty(str, constant=True)
+    def qml(self) -> str:
+        return self._qml
+
+    @pyqtSlot(str, result=str)
+    def iconUrl(self, name: str) -> str:
+        """Return file:// URL for an icon name (with or without .svg)."""
+        if not name:
+            return ""
+        if name.endswith(".svg"):
+            path = ICONS_DIR / name
+        else:
+            # camelCase → kebab-case
+            import re
+            kebab = re.sub(r"([A-Z])", r"-\1", name).lower().lstrip("-")
+            path = ICONS_DIR / f"{kebab}.svg"
+        if path.exists():
+            return path.as_uri()
+        return ""
 
 
 class Application(QApplication):
@@ -38,7 +89,9 @@ class Application(QApplication):
 
     def __init__(self):
         super().__init__(sys.argv)
-        self._engine = None
+        self._engine: QQmlApplicationEngine | None = None
+        self._paths = AppPaths()
+
         self._auth_controller = AuthController()
         self._alert_controller = AlertController()
         self._camera_service = CameraService()
@@ -57,59 +110,97 @@ class Application(QApplication):
         self._user_service = UserService()
         self._user_controller = UserController(self._user_service)
         self._router = Router()
+        self._push = PushNotificationService(self)
+        self._telegram_service = TelegramService()
+        self._telegram_controller = TelegramController(self._telegram_service)
+        self._android_perms = AndroidPermissionHelper(self)
+
+        # Bridge: alertes → notifications in-app + push OS
+        self._alert_controller.alertReceived.connect(self._on_alert_received)
+
+
+    def _on_alert_received(self, payload: dict):
+        """Nouvelle alerte → centre de notifications + push système."""
+        if not isinstance(payload, dict):
+            return
+        priority = payload.get("priority") or "HIGH"
+        title = payload.get("title") or "Security Alert"
+        message = payload.get("description") or payload.get("location") or ""
+        # In-app notification center
+        ntype = "critical" if priority == "CRITICAL" else ("warning" if priority == "HIGH" else "info")
+        try:
+            self._notification_service.create_notification(
+                type=NotificationType(ntype),
+                category=NotificationCategory.ALERT,
+                title=title,
+                message=message,
+                action_required=priority in ("CRITICAL", "HIGH"),
+                metadata={
+                    "alert_id": payload.get("id"),
+                    "camera_id": payload.get("camera_id"),
+                    "location": payload.get("location"),
+                    "priority": priority,
+                },
+            )
+            # Notify QML listeners
+            self._notification_controller.notificationsChanged.emit()
+            if hasattr(self._notification_controller, "notificationAdded"):
+                # id may not be available easily; emit empty or skip
+                pass
+        except Exception as exc:
+            print(f"[Notify] in-app failed: {exc}")
+
+        # OS push (tray / notify-send)
+        try:
+            self._push.push_from_alert(payload)
+        except Exception as exc:
+            print(f"[Push] OS notification failed: {exc}")
+
+        try:
+            self._telegram_controller.notify_alert(payload)
+        except Exception as exc:
+            print(f"[Telegram] notify failed: {exc}")
 
     def create_main_window(self):
-        """Crée et affiche la fenêtre principale via QML."""
+        """Crée le moteur QML et charge Main.qml."""
         self._engine = QQmlApplicationEngine()
-        
-        # Enregistre le contrôleur d'authentification
-        self._engine.rootContext().setContextProperty("AuthController", self._auth_controller)
-        
-        # Enregistre le contrôleur d'alertes
-        self._engine.rootContext().setContextProperty("AlertController", self._alert_controller)
-        
-        # Enregistre le contrôleur de caméras
-        self._engine.rootContext().setContextProperty("CameraController", self._camera_controller)
-        
-        # Enregistre le pipeline vidéo
-        self._engine.rootContext().setContextProperty("VideoPipeline", self._video_pipeline)
-        
-        # Enregistre le contrôleur d'événements
-        self._engine.rootContext().setContextProperty("EventController", self._event_controller)
-        
-        # Enregistre le contrôleur de notifications
-        self._engine.rootContext().setContextProperty("NotificationController", self._notification_controller)
-        
-        # Enregistre le contrôleur de santé système
-        self._engine.rootContext().setContextProperty("HealthController", self._health_controller)
-        
-        # Enregistre le contrôleur de paramètres
-        self._engine.rootContext().setContextProperty("SettingsController", self._settings_controller)
-        
-        # Enregistre le contrôleur de santé des services
-        self._engine.rootContext().setContextProperty("ServiceHealthController", self._service_health_controller)
-        
-        # Enregistre le contrôleur d'utilisateurs
-        self._engine.rootContext().setContextProperty("UserController", self._user_controller)
+        ctx = self._engine.rootContext()
 
-        # Enregistre le routeur (navigation)
-        self._engine.rootContext().setContextProperty("Router", self._router)
-        
-        # Ajoute le provider d'images vidéo
+        # Controllers
+        ctx.setContextProperty("AuthController", self._auth_controller)
+        ctx.setContextProperty("AlertController", self._alert_controller)
+        ctx.setContextProperty("CameraController", self._camera_controller)
+        ctx.setContextProperty("VideoPipeline", self._video_pipeline)
+        ctx.setContextProperty("EventController", self._event_controller)
+        ctx.setContextProperty("NotificationController", self._notification_controller)
+        ctx.setContextProperty("HealthController", self._health_controller)
+        ctx.setContextProperty("SettingsController", self._settings_controller)
+        ctx.setContextProperty("ServiceHealthController", self._service_health_controller)
+        ctx.setContextProperty("UserController", self._user_controller)
+        ctx.setContextProperty("Router", self._router)
+        ctx.setContextProperty("PushService", self._push)
+        ctx.setContextProperty("TelegramController", self._telegram_controller)
+        ctx.setContextProperty("AndroidPermissions", self._android_perms)
+        ctx.setContextProperty("AppPaths", self._paths)
+
+        # Video image provider
         self._engine.addImageProvider("video", self._video_pipeline.image_provider)
-        
-        # Ajoute le chemin QML pour les imports
-        qml_path = Path(__file__).parent / "qml"
-        self._engine.addImportPath(str(qml_path))
-        
-        # Chemin vers le fichier QML principal
-        qml_file = Path(__file__).parent / "qml" / "Main.qml"
+
+        # QML import path
+        self._engine.addImportPath(str(QML_DIR))
+
+        qml_file = QML_DIR / "Main.qml"
+        if not qml_file.exists():
+            raise FileNotFoundError(f"QML entry not found: {qml_file}")
+
         self._engine.load(QUrl.fromLocalFile(str(qml_file)))
 
         if not self._engine.rootObjects():
-            raise RuntimeError("Failed to load QML file")
+            raise RuntimeError(
+                f"Failed to load QML: {qml_file}\n"
+                "Check console for QML errors (missing imports, syntax)."
+            )
 
-    def exec(self):
-        """Démarre la boucle d'événements."""
+    def exec(self) -> int:
         self.create_main_window()
         return super().exec()

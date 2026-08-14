@@ -45,7 +45,7 @@ class CameraController(QObject):
         """Nombre de caméras avec alertes."""
         return len(self._service.get_cameras_with_alerts())
     
-    @pyqtSlot(str, result=dict)
+    @pyqtSlot(str, result='QVariantMap')
     def getCamera(self, camera_id: str) -> Optional[Dict[str, Any]]:
         """Récupère une caméra par ID."""
         camera = self._service.get_camera(camera_id)
@@ -108,7 +108,7 @@ class CameraController(QObject):
             self.detectionAdded.emit(camera_id)
         return success
     
-    @pyqtSlot(result=dict)
+    @pyqtSlot(result='QVariantMap')
     def getCameraStats(self) -> Dict[str, int]:
         """Récupère les statistiques de caméras."""
         return self._service.get_camera_count()

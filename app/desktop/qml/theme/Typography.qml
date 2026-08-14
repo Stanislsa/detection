@@ -11,6 +11,8 @@ QtObject {
     // ---- Families ----
     readonly property string fontFamily:        "Inter, 'Plus Jakarta Sans', 'Segoe UI', sans-serif"
     readonly property string fontFamilyMono:    "JetBrains Mono, 'Fira Code', 'Cascadia Mono', Consolas, monospace"
+    // Alias used by pages that label technical/code values distinctly from `fontFamilyMono`
+    readonly property string fontFamilyCode:    fontFamilyMono
 
     // ---- Sizes ----
     readonly property int fontSizeXS:           11

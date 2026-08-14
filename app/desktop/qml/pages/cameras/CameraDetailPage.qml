@@ -44,7 +44,7 @@ Flickable {
             
             AppButton {
                 text: "← Back"
-                backgroundColor: theme ? theme.surface : "#2d2d2d"
+                variant: "secondary"
                 theme: control.theme
                 Layout.alignment: Qt.AlignRight
                 onClicked: control.backRequested()
@@ -97,7 +97,7 @@ Flickable {
                     AppButton {
                         id: settingsButton
                         text: "⚙️ Settings"
-                        backgroundColor: theme ? theme.surface : "#2d2d2d"
+                        variant: "secondary"
                         theme: control.theme
                         onClicked: Router.navigate_to("camera_settings")
                     }

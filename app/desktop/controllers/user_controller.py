@@ -34,12 +34,12 @@ class UserController(QObject):
         """Nombre total d'utilisateurs."""
         return len(self._service.get_all_users())
     
-    @pyqtProperty(dict, notify=usersChanged)
+    @pyqtProperty('QVariantMap', notify=usersChanged)
     def userStatistics(self) -> Dict[str, int]:
         """Statistiques des utilisateurs."""
         return self._service.get_user_statistics()
     
-    @pyqtSlot(str, result=dict)
+    @pyqtSlot(str, result='QVariantMap')
     def getUser(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Récupère un utilisateur par ID."""
         user = self._service.get_user(user_id)

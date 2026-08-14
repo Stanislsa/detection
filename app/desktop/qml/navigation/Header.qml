@@ -12,13 +12,20 @@ Rectangle {
     property var crumbs: ["SentinelAI", "Dashboard"]
     property string searchQuery: ""
     property int unreadCount: 0
+    property bool isDark: true
 
     signal searchSubmitted(string query)
     signal breadcrumbClicked(int index)
     signal notificationClicked()
+    signal themeToggleRequested()
+    signal menuToggleRequested()
 
     implicitHeight: theme.headerHeight
     color: theme.surface
+
+    Behavior on color {
+        ColorAnimation { duration: 280; easing.type: Easing.InOutQuad }
+    }
 
     Rectangle {
         anchors.left: parent.left
@@ -28,102 +35,110 @@ Rectangle {
         color: theme.border
     }
 
-    Row {
+    RowLayout {
         anchors.fill: parent
         anchors.leftMargin: theme.spacingM
         anchors.rightMargin: theme.spacingM
         spacing: theme.spacingM
 
+        // Hamburger / menu toggle (always visible for responsiveness)
+        AppIconButton {
+            Layout.preferredWidth: 32
+            Layout.preferredHeight: 32
+            iconName: "menu"
+            theme: control.theme
+            onClicked: control.menuToggleRequested()
+        }
+
         // Breadcrumb
         Breadcrumb {
-            anchors.verticalCenter: parent.verticalCenter
+            Layout.fillWidth: false
+            Layout.maximumWidth: 280
             theme: control.theme
             items: control.crumbs
             onItemClicked: (index) => control.breadcrumbClicked(index)
         }
 
-        Item { width: 1; height: parent.height }
+        Item { Layout.fillWidth: true }
 
-        // Global search (center)
+        // Global search
         Item {
-            width: 360
-            height: theme.buttonHeight
-            anchors.verticalCenter: parent.verticalCenter
+            Layout.preferredWidth: Math.min(360, parent.width * 0.28)
+            Layout.preferredHeight: theme.buttonHeight
+            Layout.minimumWidth: 160
 
             AppInput {
                 anchors.fill: parent
                 theme: control.theme
                 placeholderText: "Search alerts, cameras, logs…"
-                leadingIcon: "⌕"
+                leadingIcon: "search"
                 mono: false
                 onAccepted: control.searchSubmitted(text)
             }
         }
 
-        Item { width: 1; height: parent.height }
+        // Theme toggle
+        AppIconButton {
+            Layout.preferredWidth: 32
+            Layout.preferredHeight: 32
+            iconName: control.isDark ? "sun" : "moon"
+            theme: control.theme
+            ToolTip.visible: hovered
+            ToolTip.text: control.isDark ? "Switch to Light mode" : "Switch to Dark mode"
+            onClicked: control.themeToggleRequested()
+        }
 
-        // Right-side icons
-        Row {
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: theme.spacingS
+        // Notification bell
+        Item {
+            Layout.preferredWidth: 32
+            Layout.preferredHeight: 32
 
-            Item {
-                width: 32
-                height: 32
-                anchors.verticalCenter: parent.verticalCenter
-
-                AppIconButton {
-                    anchors.fill: parent
-                    text: "⌕"
-                    theme: control.theme
-                    onClicked: control.searchSubmitted("")
-                }
-            }
-
-            Item {
-                width: 32
-                height: 32
-                anchors.verticalCenter: parent.verticalCenter
-
-                AppIconButton {
-                    anchors.fill: parent
-                    text: "ⓘ"
-                    theme: control.theme
-                    onClicked: control.notificationClicked()
-                }
-
-                // Badge
-                Rectangle {
-                    visible: control.unreadCount > 0
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.margins: -2
-                    width: badgeLabel.implicitWidth + 8
-                    height: 16
-                    radius: 8
-                    color: theme.critical
-                    border.color: theme.surface
-                    border.width: 1
-
-                    Text {
-                        id: badgeLabel
-                        anchors.centerIn: parent
-                        text: control.unreadCount > 99 ? "99+" : control.unreadCount.toString()
-                        font.family: theme.fontFamilyMono
-                        font.pixelSize: theme.fontSizeXS
-                        font.weight: theme.weightBold
-                        color: "#FFFFFF"
-                    }
-                }
-            }
-
-            // Avatar chip
-            AvatarChip {
+            AppIconButton {
+                anchors.fill: parent
+                iconName: "bell"
                 theme: control.theme
-                name: "Alex Rivers"
-                role: "SOC Analyst"
-                initials: "AR"
+                onClicked: control.notificationClicked()
             }
+
+            Rectangle {
+                visible: control.unreadCount > 0
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: -2
+                width: badgeLabel.implicitWidth + 8
+                height: 16
+                radius: 8
+                color: theme.critical
+                border.color: theme.surface
+                border.width: 1
+                z: 2
+
+                Text {
+                    id: badgeLabel
+                    anchors.centerIn: parent
+                    text: control.unreadCount > 99 ? "99+" : control.unreadCount.toString()
+                    font.family: theme.fontFamilyMono
+                    font.pixelSize: theme.fontSizeXS
+                    font.weight: theme.weightBold
+                    color: "#FFFFFF"
+                }
+
+                // Pulse animation on badge
+                SequentialAnimation on scale {
+                    running: control.unreadCount > 0
+                    loops: Animation.Infinite
+                    NumberAnimation { to: 1.15; duration: 600; easing.type: Easing.InOutQuad }
+                    NumberAnimation { to: 1.0; duration: 600; easing.type: Easing.InOutQuad }
+                }
+            }
+        }
+
+        // Avatar chip
+        AvatarChip {
+            theme: control.theme
+            name: "Alex Rivers"
+            role: "SOC Analyst"
+            initials: "AR"
         }
     }
 }

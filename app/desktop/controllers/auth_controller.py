@@ -53,6 +53,16 @@ class AuthController(QObject):
             self.twoFactorFailed.emit("Invalid verification code")
 
     @pyqtSlot(str)
+    def verifyTwoFactor(self, code: str):
+        """Alias camelCase pour QML."""
+        self.verify_two_factor(code)
+
+    @pyqtSlot(str)
+    def requestPasswordReset(self, email: str):
+        """Alias camelCase pour QML."""
+        self.request_password_reset(email)
+
+    @pyqtSlot(str)
     def request_password_reset(self, email: str):
         """Demande une réinitialisation de mot de passe."""
         if email == self.TEMP_EMAIL:

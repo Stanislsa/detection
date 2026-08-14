@@ -42,7 +42,7 @@ Flickable {
             
             AppButton {
                 text: "← Back"
-                backgroundColor: theme ? theme.surface : "#2d2d2d"
+                variant: "secondary"
                 theme: control.theme
                 Layout.alignment: Qt.AlignRight
                 onClicked: control.backRequested()
@@ -196,14 +196,14 @@ Flickable {
             
             AppButton {
                 text: "Cancel"
-                backgroundColor: theme ? theme.surface : "#2d2d2d"
+                variant: "secondary"
                 theme: control.theme
                 onClicked: control.backRequested()
             }
             
             AppButton {
                 text: "Save Settings"
-                backgroundColor: theme ? theme.primary : "#0078d4"
+                variant: "primary"
                 theme: control.theme
                 onClicked: {
                     console.log("Settings saved")

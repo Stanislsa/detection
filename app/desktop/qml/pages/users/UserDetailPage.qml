@@ -48,7 +48,7 @@ Flickable {
             
             AppButton {
                 text: "← Back"
-                backgroundColor: theme ? theme.surface : "#2d2d2d"
+                variant: "secondary"
                 theme: control.theme
                 Layout.alignment: Qt.AlignLeft
                 onClicked: {
@@ -88,13 +88,13 @@ Flickable {
                     text: currentUser ? currentUser.status.toUpperCase() : "UNKNOWN"
                     font.pixelSize: theme ? theme.fontSizeS : 12
                     font.bold: true
-                    color: "#ffffff"
+                    color: theme ? theme.onAccent : "#ffffff"
                 }
             }
             
             AppButton {
                 text: "Edit"
-                backgroundColor: theme ? theme.primary : "#0078d4"
+                variant: "primary"
                 theme: control.theme
                 Layout.alignment: Qt.AlignRight
                 onClicked: {

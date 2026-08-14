@@ -10,7 +10,7 @@ Rectangle {
     property string title: "Active Threats"
     property string kpiValue: "0"
     property string icon: ""
-    property color cardColor: theme.primary
+    property color cardColor: theme ? theme.primary : "#2563EB"
 
     // Spec extras
     property string delta: ""            // "+5%" / "-12%"
@@ -23,9 +23,9 @@ Rectangle {
     implicitWidth: 220
     implicitHeight: 120
 
-    color: theme.surface
-    radius: theme.radiusM
-    border.color: theme.border
+    color: theme ? theme.surface : "#151C28"
+    radius: theme ? theme.radiusM : 4
+    border.color: theme ? theme.border : "#1E293B"
     border.width: 1
 
     Rectangle {
@@ -37,22 +37,22 @@ Rectangle {
 
     Row {
         anchors.fill: parent
-        anchors.leftMargin: theme.spacingM
-        anchors.topMargin: theme.spacingM
-        anchors.bottomMargin: theme.spacingM
-        anchors.rightMargin: theme.spacingM
-        spacing: theme.spacingM
+        anchors.leftMargin: theme ? theme.spacingM : 16
+        anchors.topMargin: theme ? theme.spacingM : 16
+        anchors.bottomMargin: theme ? theme.spacingM : 16
+        anchors.rightMargin: theme ? theme.spacingM : 16
+        spacing: theme ? theme.spacingM : 16
 
         Column {
             width: parent.width - 56
             anchors.verticalCenter: parent.verticalCenter
-            spacing: theme.spacingXS
+            spacing: theme ? theme.spacingXS : 4
 
             Row {
-                spacing: theme.spacingXS
+                spacing: theme ? theme.spacingXS : 4
                 AppIcon {
-                    width: theme.iconSizeM
-                    height: theme.iconSizeM
+                    width: theme ? theme.iconSizeM : 18
+                    height: theme ? theme.iconSizeM : 18
                     iconName: control.icon
                     iconColor: control.cardColor
                     visible: control.icon !== ""
@@ -60,11 +60,11 @@ Rectangle {
                 }
                 Text {
                     text: control.title.toUpperCase()
-                    font.family: theme.fontFamilyMono
-                    font.pixelSize: theme.fontSizeXS
-                    font.letterSpacing: theme.letterSpacingM
-                    font.weight: theme.weightSemiBold
-                    color: theme.textSecondary
+                    font.family: theme ? theme.fontFamilyMono : "JetBrains Mono"
+                    font.pixelSize: theme ? theme.fontSizeXS : 11
+                    font.letterSpacing: theme ? theme.letterSpacingM : 0.04
+                    font.weight: theme ? theme.weightSemiBold : Font.DemiBold
+                    color: theme ? theme.textSecondary : "#94A3B8"
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
@@ -73,18 +73,18 @@ Rectangle {
                 spacing: 4
                 Text {
                     text: control.kpiValue
-                    font.family: control.monoValue && theme ? theme.fontFamilyMono : theme.fontFamily
-                    font.pixelSize: theme.fontSizeXXXL
-                    font.weight: theme.weightBold
-                    color: theme.textPrimary
+                    font.family: (control.monoValue && theme) ? theme.fontFamilyMono : (theme ? theme.fontFamily : "Inter")
+                    font.pixelSize: theme ? theme.fontSizeXXXL : 28
+                    font.weight: theme ? theme.weightBold : Font.Bold
+                    color: theme ? theme.textPrimary : "#E5E7EB"
                 }
                 Text {
                     visible: control.unit !== ""
                     text: control.unit
-                    font.family: theme.fontFamilyMono
-                    font.pixelSize: theme.fontSizeL
-                    font.weight: theme.weightRegular
-                    color: theme.textSecondary
+                    font.family: theme ? theme.fontFamilyMono : "JetBrains Mono"
+                    font.pixelSize: theme ? theme.fontSizeL : 14
+                    font.weight: theme ? theme.weightRegular : Font.Normal
+                    color: theme ? theme.textSecondary : "#94A3B8"
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }

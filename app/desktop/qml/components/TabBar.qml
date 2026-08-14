@@ -47,7 +47,7 @@ Rectangle {
                     visible: index === control.currentIndex
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.bottom: parent.bottom
-                    width: tabText.implicitWidth + theme.spacingS
+                    width: tabText.implicitWidth + (theme ? theme.spacingS : 8)
                     height: 2
                     color: control.activeColor
                 }

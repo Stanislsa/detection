@@ -12,10 +12,15 @@ Row {
     property bool checked: false
     property string label: ""
 
+    signal toggled(bool checked)
+
     Switch {
         id: sw
         checked: control.checked
-        onCheckedChanged: control.checked = checked
+        onCheckedChanged: {
+            control.checked = checked
+            control.toggled(checked)
+        }
         indicator: Rectangle {
             implicitWidth: 40
             implicitHeight: 22

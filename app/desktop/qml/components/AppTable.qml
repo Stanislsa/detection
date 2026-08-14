@@ -3,9 +3,25 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 
 /*
- * AppTable — fixed: define `alternateRowColor` as a real property
- * (the previous code referenced `theme.surfaceSecondary`, which
- * didn't exist). Apply selection highlight to the active row.
+ * AppTable — generic data table.
+ *
+ * `columns`: [{ title, field, width, alignment, mono, format(value),
+ *               statusField }]
+ *   - `field`      key read from each row object for this column's text
+ *   - `format`     optional function(value) -> string
+ *   - `mono`       render this column's text in the monospace family
+ *   - `statusField` (leading column only) name of the row field whose
+ *                  value ("critical"/"warning"/"low"/anything else)
+ *                  drives the 4px leading status strip color
+ * `model`: array of plain row objects, one per row, whose keys match
+ *          each column's `field`.
+ *
+ * Fix: row cells must read the *row's* data, not the column spec. The
+ * previous implementation looked up `modelData[modelData.field]` from
+ * inside the column Repeater, where `modelData` had already been
+ * shadowed by the column spec — every cell rendered blank. The row's
+ * data is now captured once (`rowRoot.rowData`) before the column
+ * Repeater's own `modelData` shadows it.
  */
 ScrollView {
     id: control
@@ -22,6 +38,8 @@ ScrollView {
     property color borderColor: theme ? theme.border : "#1E293B"
     property color textColor: theme ? theme.textPrimary : "#E5E7EB"
     property color headerTextColor: theme ? theme.textSecondary : "#94A3B8"
+
+    signal rowClicked(int index, var rowData)
 
     clip: true
 
@@ -81,11 +99,18 @@ ScrollView {
         }
 
         delegate: Rectangle {
+            id: rowRoot
             width: listView.width
             height: theme ? theme.buttonHeight : 36
-            color: listView.activeIndex === index
+            // Capture this row's data now, before the nested column
+            // Repeater below installs its own `modelData`/`index` and
+            // shadows these for everything inside it.
+            property var rowData: modelData
+            property int rowIndex: index
+
+            color: listView.activeIndex === rowIndex
                 ? Qt.darker(control.selectedColor, 4)
-                : (index % 2 === 0 ? control.rowColor : control.alternateRowColor)
+                : (rowIndex % 2 === 0 ? control.rowColor : control.alternateRowColor)
             border.color: control.borderColor
             border.width: 1
 
@@ -106,9 +131,9 @@ ScrollView {
                         Text {
                             anchors.fill: parent
                             text: {
-                                var value = modelData.field ? modelData[modelData.field] : modelData[index]
+                                var value = modelData.field ? rowRoot.rowData[modelData.field] : undefined
                                 if (modelData.format) return modelData.format(value)
-                                return value !== undefined ? value.toString() : ""
+                                return value !== undefined && value !== null ? value.toString() : ""
                             }
                             font.family: modelData.mono && theme ? theme.fontFamilyMono : (theme ? theme.fontFamily : "Inter")
                             font.pixelSize: theme ? theme.fontSizeS : 12
@@ -128,16 +153,16 @@ ScrollView {
                             color: control.borderColor
                         }
 
-                        // 8px status strip on the leading cell
+                        // 4px status strip on the leading cell
                         Rectangle {
-                            visible: index === 0 && modelData.statusField
+                            visible: index === 0 && !!modelData.statusField
                             anchors.left: parent.left
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
                             width: 4
                             color: {
                                 if (!modelData.statusField) return "transparent"
-                                var v = modelData.statusField(modelData[modelData.statusField])
+                                var v = rowRoot.rowData[modelData.statusField]
                                 if (v === "high" || v === "critical") return theme ? theme.critical : "#EF4444"
                                 if (v === "medium" || v === "warning") return theme ? theme.warning : "#F59E0B"
                                 if (v === "low") return theme ? theme.info : "#06B6D4"
@@ -151,11 +176,14 @@ ScrollView {
             MouseArea {
                 anchors.fill: parent
                 hoverEnabled: true
-                onEntered: if (listView.activeIndex !== index) parent.color = control.hoverColor
-                onExited: parent.color = listView.activeIndex === index
+                onEntered: if (listView.activeIndex !== rowRoot.rowIndex) parent.color = control.hoverColor
+                onExited: parent.color = listView.activeIndex === rowRoot.rowIndex
                     ? Qt.darker(control.selectedColor, 4)
-                    : (index % 2 === 0 ? control.rowColor : control.alternateRowColor)
-                onClicked: listView.currentIndex = index
+                    : (rowRoot.rowIndex % 2 === 0 ? control.rowColor : control.alternateRowColor)
+                onClicked: {
+                    listView.currentIndex = rowRoot.rowIndex
+                    control.rowClicked(rowRoot.rowIndex, rowRoot.rowData)
+                }
             }
         }
     }

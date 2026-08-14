@@ -48,7 +48,7 @@ class NotificationController(QObject):
         """Nombre de notifications nécessitant une action."""
         return len(self._service.get_action_required_notifications())
     
-    @pyqtSlot(str, result=dict)
+    @pyqtSlot(str, result='QVariantMap')
     def getNotification(self, notification_id: str) -> Optional[Dict[str, Any]]:
         """Récupère une notification par ID."""
         notification = self._service.get_notification(notification_id)
@@ -125,7 +125,7 @@ class NotificationController(QObject):
         """Récupère les notifications récentes."""
         return [n.to_dict() for n in self._service.get_recent_notifications(hours)]
     
-    @pyqtSlot(result=dict)
+    @pyqtSlot(result='QVariantMap')
     def getNotificationStatistics(self) -> Dict[str, int]:
         """Récupère les statistiques des notifications."""
         return self._service.get_notification_statistics()

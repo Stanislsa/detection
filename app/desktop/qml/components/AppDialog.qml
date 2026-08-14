@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Effects
 import "../theme"
 import "."
 
@@ -15,6 +16,12 @@ Popup {
     property string title: ""
     property string state: "normal" // normal, loading, success, error, disabled
     property int dialogContentHeight: 200
+    // Redirect implicit/default children (declared by callers, e.g.
+    // `AddCameraDialog { Column { ... } }`) into `contentContainer`
+    // instead of letting them land as direct children of the
+    // `contentItem: Column` below (Column forbids anchors on direct
+    // children, which broke every dialog subtype that used anchors.fill).
+    default property alias content: contentContainer.data
 
     signal accepted()
 
@@ -29,13 +36,13 @@ Popup {
         border.width: 1
 
         layer.enabled: true
-        layer.effect: DropShadow {
-            color: theme ? theme.shadowColor : "#000000"
-            radius: theme ? theme.shadowBlur : 24
-            samples: 17
-            offsetY: theme ? theme.shadowOffsetY : 8
-            opacity: theme ? theme.shadowOpacity : 0.4
-            transparentBorder: true
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowColor: theme ? theme.shadowColor : "#000000"
+            shadowBlur: Math.min(1.0, (theme ? theme.shadowBlur : 24) / 40)
+            shadowVerticalOffset: theme ? theme.shadowOffsetY : 8
+            shadowHorizontalOffset: 0
+            shadowOpacity: theme ? theme.shadowOpacity : 0.4
         }
     }
 
@@ -71,7 +78,6 @@ Popup {
         Item {
             width: parent.width
             height: control.dialogContentHeight
-            default property alias content: contentContainer.data
 
             Item {
                 id: contentContainer

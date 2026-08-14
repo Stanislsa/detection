@@ -6,7 +6,7 @@ Item {
     
     property var theme
     property var data: [] // Array of {label, value} values
-    property color barColor: theme.primary
+    property color barColor: theme ? theme.primary : "#2563EB"
     
     implicitWidth: 300
     implicitHeight: 200
@@ -22,7 +22,7 @@ Item {
             if (control.data.length === 0) return
             
             // Draw axes
-            ctx.strokeStyle = theme.border
+            ctx.strokeStyle = theme ? theme.border : "#1E293B"
             ctx.lineWidth = 1
             ctx.beginPath()
             ctx.moveTo(30, 10)

@@ -22,32 +22,32 @@ class SettingsController(QObject):
         super().__init__()
         self._service = service
     
-    @pyqtProperty(dict, notify=settingsChanged)
+    @pyqtProperty('QVariantMap', notify=settingsChanged)
     def generalSettings(self) -> Dict[str, Any]:
         """Paramètres généraux."""
         return self._service.get_general_settings().to_dict()
     
-    @pyqtProperty(dict, notify=settingsChanged)
+    @pyqtProperty('QVariantMap', notify=settingsChanged)
     def cameraSettings(self) -> Dict[str, Any]:
         """Paramètres de caméra."""
         return self._service.get_camera_settings().to_dict()
     
-    @pyqtProperty(dict, notify=settingsChanged)
+    @pyqtProperty('QVariantMap', notify=settingsChanged)
     def aiSettings(self) -> Dict[str, Any]:
         """Paramètres IA."""
         return self._service.get_ai_settings().to_dict()
     
-    @pyqtProperty(dict, notify=settingsChanged)
+    @pyqtProperty('QVariantMap', notify=settingsChanged)
     def notificationSettings(self) -> Dict[str, Any]:
         """Paramètres de notification."""
         return self._service.get_notification_settings().to_dict()
     
-    @pyqtProperty(dict, notify=settingsChanged)
+    @pyqtProperty('QVariantMap', notify=settingsChanged)
     def storageSettings(self) -> Dict[str, Any]:
         """Paramètres de stockage."""
         return self._service.get_storage_settings().to_dict()
     
-    @pyqtProperty(dict, notify=settingsChanged)
+    @pyqtProperty('QVariantMap', notify=settingsChanged)
     def securitySettings(self) -> Dict[str, Any]:
         """Paramètres de sécurité."""
         return self._service.get_security_settings().to_dict()

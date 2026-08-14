@@ -26,7 +26,7 @@ Rectangle {
         return theme.success
     }
 
-    implicitWidth: layout.implicitWidth + theme.spacingS * 2
+    implicitWidth: layout.implicitWidth + (theme ? theme.spacingS : 8) * 2
     implicitHeight: theme ? theme.inputHeight / 1.6 : 22
     radius: height / 2
     color: variant === "solid" ? resolvedColor : "transparent"

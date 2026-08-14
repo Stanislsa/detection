@@ -8,216 +8,224 @@ import "../../charts"
 
 Flickable {
     id: control
-
     property var theme
 
-    contentWidth: parent.width
-    contentHeight: contentColumn.height + (theme ? theme.spacingXL : 48)
+    contentWidth: width
+    contentHeight: contentColumn.implicitHeight + (theme ? theme.spacingXXL : 48)
     clip: true
+    boundsBehavior: Flickable.StopAtBounds
+    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
     Column {
         id: contentColumn
         width: parent.width
         spacing: theme ? theme.spacingL : 24
-        anchors.top: parent.top
-        anchors.topMargin: theme ? theme.spacingL : 24
+        topPadding: theme ? theme.spacingL : 24
+        bottomPadding: theme ? theme.spacingXL : 32
+        leftPadding: theme ? theme.spacingL : 24
+        rightPadding: theme ? theme.spacingL : 24
 
-        // ---- KPI Row: 4 spec cards with deltas ----
-        RowLayout {
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: parent.width - (theme ? theme.spacingXL : 48) * 2
-            spacing: theme ? theme.spacingM : 16
+        GridLayout {
+            width: parent.width - parent.leftPadding - parent.rightPadding
+            columns: width > 900 ? 4 : (width > 500 ? 2 : 1)
+            rowSpacing: theme ? theme.spacingM : 16
+            columnSpacing: theme ? theme.spacingM : 16
 
-            KpiCard {
-                theme: control.theme
-                Layout.fillWidth: true
-                Layout.preferredWidth: 200
-                title: "Active Threats"
-                kpiValue: "12"
-                unit: ""
-                icon: Icons.alertGlyph
-                cardColor: theme.critical
-                accent: theme.critical
-                delta: "+3"
-                deltaPositive: false
-                deltaColor: "critical"
-            }
+            Repeater {
+                model: [
+                    { title: "Active Threats", value: "12", delta: "-12% VS LAST 24H", positive: false, accent: "critical", icon: "shield" },
+                    { title: "AI Inference Load", value: "42.8%", delta: "+5% VS LAST 24H", positive: true, accent: "primary", icon: "cpu" },
+                    { title: "Live Nodes", value: "128 / 130", delta: "+6% VS LAST 24H", positive: true, accent: "success", icon: "activity" },
+                    { title: "Events / Sec", value: "1,422", delta: "+24% VS LAST 24H", positive: true, accent: "info", icon: "zap" }
+                ]
+                delegate: Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 96
+                    radius: theme ? theme.radiusM : 4
+                    color: theme ? theme.surface : "#151C28"
+                    border.color: theme ? theme.border : "#1E293B"
+                    border.width: 1
 
-            KpiCard {
-                theme: control.theme
-                Layout.fillWidth: true
-                Layout.preferredWidth: 200
-                title: "AI Inference Load"
-                kpiValue: "42.8"
-                unit: "%"
-                icon: Icons.aiTrainingGlyph
-                cardColor: theme.primary
-                accent: theme.primary
-                delta: "+5.4%"
-                deltaPositive: true
-                deltaColor: "info"
-            }
-
-            KpiCard {
-                theme: control.theme
-                Layout.fillWidth: true
-                Layout.preferredWidth: 200
-                title: "Live Nodes"
-                kpiValue: "128/130"
-                unit: ""
-                icon: Icons.observabilityGlyph
-                cardColor: theme.success
-                accent: theme.success
-                delta: "-2"
-                deltaPositive: false
-                deltaColor: "warning"
-            }
-
-            KpiCard {
-                theme: control.theme
-                Layout.fillWidth: true
-                Layout.preferredWidth: 200
-                title: "Events / Sec"
-                kpiValue: "1,422"
-                unit: "ev/s"
-                icon: Icons.eventsGlyph
-                cardColor: theme.info
-                accent: theme.info
-                delta: "+12%"
-                deltaPositive: true
-                deltaColor: "success"
+                    Column {
+                        anchors.fill: parent
+                        anchors.margins: theme ? theme.spacingM : 16
+                        spacing: 6
+                        Row {
+                            width: parent.width
+                            spacing: 8
+                            AppIcon {
+                                width: 16; height: 16
+                                iconName: modelData.icon
+                                iconColor: theme ? theme.textMuted : "#64748B"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: modelData.title.toUpperCase()
+                                font.family: theme ? theme.fontFamilyMono : "monospace"
+                                font.pixelSize: theme ? theme.fontSizeXS : 11
+                                font.letterSpacing: 1
+                                color: theme ? theme.textMuted : "#64748B"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                        Text {
+                            text: modelData.value
+                            font.family: theme ? theme.fontFamily : "sans-serif"
+                            font.pixelSize: theme ? theme.fontSizeXXL : 20
+                            font.weight: Font.Bold
+                            color: {
+                                if (modelData.accent === "critical") return theme ? theme.critical : "#EF4444"
+                                if (modelData.accent === "success") return theme ? theme.success : "#10B981"
+                                if (modelData.accent === "info") return theme ? theme.info : "#06B6D4"
+                                return theme ? theme.textPrimary : "#E5E7EB"
+                            }
+                        }
+                        Text {
+                            text: modelData.delta
+                            font.family: theme ? theme.fontFamilyMono : "monospace"
+                            font.pixelSize: 10
+                            color: modelData.positive
+                                   ? (theme ? theme.success : "#10B981")
+                                   : (theme ? theme.critical : "#EF4444")
+                        }
+                    }
+                }
             }
         }
 
-        // ---- Live Surveillance Matrix ----
-        AppCard {
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: parent.width - (theme ? theme.spacingXL : 48) * 2
-            height: theme ? theme.cardHeightXXL : 400
-            theme: control.theme
+        Rectangle {
+            width: parent.width - parent.leftPadding - parent.rightPadding
+            height: matrixCol.implicitHeight + 32
+            radius: theme ? theme.radiusM : 4
+            color: theme ? theme.surface : "#151C28"
+            border.color: theme ? theme.border : "#1E293B"
+            border.width: 1
 
             Column {
-                anchors.fill: parent
-                anchors.margins: theme ? theme.spacingM : 16
+                id: matrixCol
+                width: parent.width
+                padding: theme ? theme.spacingM : 16
                 spacing: theme ? theme.spacingM : 16
 
                 RowLayout {
-                    width: parent.width
-                    spacing: theme ? theme.spacingM : 16
-
+                    width: parent.width - parent.padding * 2
+                    spacing: 12
+                    AppIcon { width: 16; height: 16; iconName: "video"; iconColor: theme ? theme.textSecondary : "#94A3B8" }
                     Text {
                         text: "Live Surveillance Matrix"
-                        font.pixelSize: theme ? theme.fontSizeL : 16
-                        font.weight: theme.weightSemiBold
-                        color: theme ? theme.textPrimary : "#ffffff"
-                        Layout.alignment: Qt.AlignLeft
+                        font.pixelSize: theme ? theme.fontSizeL : 14
+                        font.weight: Font.DemiBold
+                        color: theme ? theme.textPrimary : "#E5E7EB"
                     }
-
-                    AppBadge {
-                        theme: control.theme
-                        variant: "subtle"
-                        icon: Icons.successGlyph
-                        text: "SYNC_STABLE"
+                    Rectangle {
+                        width: syncLabel.implicitWidth + 16
+                        height: 22
+                        radius: 11
+                        color: "#10B98122"
+                        border.color: theme ? theme.success : "#10B981"
+                        border.width: 1
+                        Text {
+                            id: syncLabel
+                            anchors.centerIn: parent
+                            text: "SYNC_STABLE"
+                            font.family: theme ? theme.fontFamilyMono : "monospace"
+                            font.pixelSize: 10
+                            font.weight: Font.Bold
+                            color: theme ? theme.success : "#10B981"
+                        }
                     }
-
                     Item { Layout.fillWidth: true }
-
-                    AppButton {
-                        theme: control.theme
-                        variant: "secondary"
-                        text: "CUSTOM VIEW"
-                    }
-
-                    AppButton {
-                        theme: control.theme
-                        variant: "secondary"
-                        text: "TOGGLE AI LABELS"
-                    }
                 }
 
-                Rectangle {
-                    width: parent.width
-                    height: 1
-                    color: theme ? theme.border : "#1E293B"
-                }
-
-                // 2x3 Video Grid
                 GridLayout {
-                    width: parent.width
-                    height: parent.height - 60
-                    columns: 3
-                    columnSpacing: theme ? theme.spacingS : 8
-                    rowSpacing: theme ? theme.spacingS : 8
+                    width: parent.width - parent.padding * 2
+                    columns: width > 700 ? 3 : (width > 400 ? 2 : 1)
+                    rowSpacing: 8
+                    columnSpacing: 8
 
                     Repeater {
                         model: [
-                            { id: "LOBBY_EAST_01", alert: false },
-                            { id: "WH_DOCK_07",     alert: true  },
-                            { id: "SERVER_COR_04",  alert: false },
-                            { id: "PARK_EXT_12",    alert: false },
-                            { id: "RETAIL_FLR_02",  alert: false },
-                            { id: "PERIM_FNC_09",   alert: false }
+                            { name: "LOBBY_EAST_01", loc: "MAIN ENTRANCE / LOBBY", live: true, alert: false },
+                            { name: "WH_DOCK_07", loc: "WAREHOUSE / LOADING DOCK B", live: true, alert: true },
+                            { name: "SERVER_COR_04", loc: "DATA CENTER / AISLE 4", live: true, alert: false },
+                            { name: "PARK_EXT_12", loc: "PARKING LOT / NORTH PERIMETER", live: true, alert: false },
+                            { name: "RETAIL_FLR_02", loc: "LEVEL 1 / ELECTRONICS", live: true, alert: false },
+                            { name: "PERIM_FNC_09", loc: "EXTERIOR / SOUTH FENCE", live: false, alert: false }
                         ]
-
-                        Rectangle {
+                        delegate: Rectangle {
                             Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            color: theme ? theme.surfaceElevated : "#1E293B"
-                            radius: theme ? theme.radiusS : 4
-                            border.color: modelData.alert
-                                ? (theme ? theme.critical : "#EF4444")
-                                : (theme ? theme.border : "#1E293B")
-                            border.width: 1
+                            Layout.preferredHeight: 150
+                            radius: 4
+                            color: "#0A0C10"
+                            border.color: modelData.alert ? (theme ? theme.critical : "#EF4444") : (theme ? theme.border : "#1E293B")
+                            border.width: modelData.alert ? 2 : 1
+                            clip: true
 
-                            Column {
+                            Rectangle {
                                 anchors.fill: parent
-                                anchors.margins: theme ? theme.spacingS : 8
-                                spacing: theme ? theme.spacingXS : 4
-
-                                Row {
-                                    width: parent.width
-                                    Text {
-                                        text: modelData.id
-                                        font.pixelSize: theme ? theme.fontSizeXS : 10
-                                        font.family: theme ? theme.fontFamilyMono : "JetBrains Mono"
-                                        font.weight: theme ? theme.weightSemiBold : Font.DemiBold
-                                        color: modelData.alert
-                                            ? (theme ? theme.critical : "#EF4444")
-                                            : (theme ? theme.success : "#10B981")
-                                    }
-                                    Item { width: 1; height: 1 }
+                                gradient: Gradient {
+                                    GradientStop { position: 0.0; color: "#0F172A" }
+                                    GradientStop { position: 1.0; color: "#1E293B" }
                                 }
+                            }
 
+                            Row {
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.margins: 8
+                                spacing: 6
                                 Rectangle {
-                                    width: parent.width
-                                    height: parent.height - 20
-                                    color: "#000000"
-                                    radius: theme ? theme.radiusS : 4
-                                    border.color: modelData.alert
-                                        ? (theme ? theme.critical : "#EF4444")
-                                        : "transparent"
-                                    border.width: modelData.alert ? 2 : 0
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: modelData.alert ? "UNAUTHORIZED_PERSON" : ""
-                                        font.pixelSize: theme ? theme.fontSizeS : 12
-                                        font.weight: theme ? theme.weightSemiBold : Font.DemiBold
-                                        color: theme ? theme.critical : "#EF4444"
+                                    width: 8; height: 8; radius: 4
+                                    color: modelData.live ? "#EF4444" : "#64748B"
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    SequentialAnimation on opacity {
+                                        running: modelData.live
+                                        loops: Animation.Infinite
+                                        NumberAnimation { to: 0.3; duration: 700 }
+                                        NumberAnimation { to: 1.0; duration: 700 }
                                     }
+                                }
+                                Text {
+                                    text: "REC  //  " + modelData.name
+                                    font.family: theme ? theme.fontFamilyMono : "monospace"
+                                    font.pixelSize: 10
+                                    color: "#E5E7EB"
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
 
-                                    // Bounding box overlay for the alert tile
-                                    Rectangle {
-                                        visible: modelData.alert
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: parent.width * 0.4
-                                        height: parent.height * 0.55
-                                        color: "transparent"
-                                        border.color: theme ? theme.critical : "#EF4444"
-                                        border.width: 2
-                                        radius: 2
-                                    }
+                            Rectangle {
+                                visible: modelData.alert
+                                anchors.centerIn: parent
+                                width: 130; height: 28
+                                radius: 2
+                                color: "#EF4444AA"
+                                border.color: "#EF4444"
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "UNAUTHORIZED_PERSON"
+                                    font.family: theme ? theme.fontFamilyMono : "monospace"
+                                    font.pixelSize: 9
+                                    font.weight: Font.Bold
+                                    color: "#FFFFFF"
+                                }
+                            }
+
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                height: 26
+                                color: "#00000099"
+                                Text {
+                                    anchors.left: parent.left
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: 8
+                                    text: modelData.loc
+                                    font.pixelSize: 10
+                                    color: "#CBD5E1"
+                                    elide: Text.ElideRight
+                                    width: parent.width - 16
                                 }
                             }
                         }
@@ -226,178 +234,100 @@ Flickable {
             }
         }
 
-        // ---- Right sidebar row: Inference Resources + Live Event Log ----
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: parent.width - (theme ? theme.spacingXL : 48) * 2
-            spacing: theme ? theme.spacingM : 16
+        // Inference + Event log
+        GridLayout {
+            width: parent.width - parent.leftPadding - parent.rightPadding
+            columns: width > 800 ? 2 : 1
+            columnSpacing: theme ? theme.spacingM : 16
+            rowSpacing: theme ? theme.spacingM : 16
 
-            // Inference Resources
-            AppCard {
-                width: (parent.width - (theme ? theme.spacingM : 16)) / 2
-                height: theme ? theme.cardHeightL : 200
-                theme: control.theme
-
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 180
+                radius: theme ? theme.radiusM : 4
+                color: theme ? theme.surface : "#151C28"
+                border.color: theme ? theme.border : "#1E293B"
+                border.width: 1
                 Column {
                     anchors.fill: parent
-                    anchors.margins: theme ? theme.spacingM : 16
-                    spacing: theme ? theme.spacingM : 16
-
+                    anchors.margins: 16
+                    spacing: 12
                     Text {
-                        text: "Inference Resources"
-                        font.pixelSize: theme ? theme.fontSizeL : 16
-                        font.weight: theme ? theme.weightSemiBold : Font.DemiBold
-                        color: theme ? theme.textPrimary : "#ffffff"
+                        text: "INFERENCE RESOURCES"
+                        font.family: theme ? theme.fontFamilyMono : "monospace"
+                        font.pixelSize: 11
+                        color: theme ? theme.textMuted : "#64748B"
                     }
-
-                    Rectangle {
-                        width: parent.width
-                        height: 1
-                        color: theme ? theme.border : "#1E293B"
-                    }
-
                     Column {
-                        width: parent.width
-                        spacing: theme ? theme.spacingS : 8
-
+                        width: parent.width; spacing: 4
                         Row {
-                            spacing: theme ? theme.spacingS : 8
-                            Text {
-                                text: "ENGINE ALPHA"
-                                font.family: theme ? theme.fontFamilyMono : "JetBrains Mono"
-                                font.pixelSize: theme ? theme.fontSizeS : 12
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            Text {
-                                text: "72%"
-                                font.family: theme ? theme.fontFamilyMono : "JetBrains Mono"
-                                font.pixelSize: theme ? theme.fontSizeS : 12
-                                font.weight: theme ? theme.weightSemiBold : Font.DemiBold
-                                color: theme ? theme.success : "#10B981"
-                            }
-                        }
-
-                        Rectangle {
                             width: parent.width
-                            height: 8
-                            radius: theme ? theme.radiusS : 4
-                            color: theme ? theme.surface : "#151C28"
-                            Rectangle {
-                                width: parent.width * 0.72
-                                height: parent.height
-                                radius: theme ? theme.radiusS : 4
-                                color: theme ? theme.primary : "#2563EB"
-                            }
+                            Text { text: "ENGINE ALPHA"; font.pixelSize: 11; color: theme ? theme.textSecondary : "#94A3B8"; width: parent.width - 40 }
+                            Text { text: "72%"; font.family: theme ? theme.fontFamilyMono : "monospace"; font.pixelSize: 11; color: theme ? theme.textPrimary : "#E5E7EB" }
                         }
-
+                        Rectangle {
+                            width: parent.width; height: 6; radius: 3
+                            color: theme ? theme.backgroundAlt : "#0F172A"
+                            Rectangle { width: parent.width * 0.72; height: parent.height; radius: 3; color: theme ? theme.primary : "#2563EB" }
+                        }
+                    }
+                    Column {
+                        width: parent.width; spacing: 4
                         Row {
-                            spacing: theme ? theme.spacingS : 8
-                            Text {
-                                text: "BUFFER STREAM"
-                                font.family: theme ? theme.fontFamilyMono : "JetBrains Mono"
-                                font.pixelSize: theme ? theme.fontSizeS : 12
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            Text {
-                                text: "18%"
-                                font.family: theme ? theme.fontFamilyMono : "JetBrains Mono"
-                                font.pixelSize: theme ? theme.fontSizeS : 12
-                                font.weight: theme ? theme.weightSemiBold : Font.DemiBold
-                                color: theme ? theme.warning : "#F59E0B"
-                            }
-                        }
-
-                        Rectangle {
                             width: parent.width
-                            height: 8
-                            radius: theme ? theme.radiusS : 4
-                            color: theme ? theme.surface : "#151C28"
-                            Rectangle {
-                                width: parent.width * 0.18
-                                height: parent.height
-                                radius: theme ? theme.radiusS : 4
-                                color: theme ? theme.warning : "#F59E0B"
-                            }
+                            Text { text: "BUFFER STREAM"; font.pixelSize: 11; color: theme ? theme.textSecondary : "#94A3B8"; width: parent.width - 40 }
+                            Text { text: "18%"; font.family: theme ? theme.fontFamilyMono : "monospace"; font.pixelSize: 11; color: theme ? theme.textPrimary : "#E5E7EB" }
+                        }
+                        Rectangle {
+                            width: parent.width; height: 6; radius: 3
+                            color: theme ? theme.backgroundAlt : "#0F172A"
+                            Rectangle { width: parent.width * 0.18; height: parent.height; radius: 3; color: theme ? theme.info : "#06B6D4" }
                         }
                     }
                 }
             }
 
-            // Live Event Log
-            AppCard {
-                width: (parent.width - (theme ? theme.spacingM : 16)) / 2
-                height: theme ? theme.cardHeightL : 200
-                theme: control.theme
-
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 180
+                radius: theme ? theme.radiusM : 4
+                color: theme ? theme.surface : "#151C28"
+                border.color: theme ? theme.border : "#1E293B"
+                border.width: 1
                 Column {
                     anchors.fill: parent
-                    anchors.margins: theme ? theme.spacingM : 16
-                    spacing: theme ? theme.spacingM : 16
-
+                    anchors.margins: 16
+                    spacing: 8
                     Text {
-                        text: "Live Event Log"
-                        font.pixelSize: theme ? theme.fontSizeL : 16
-                        font.weight: theme ? theme.weightSemiBold : Font.DemiBold
-                        color: theme ? theme.textPrimary : "#ffffff"
+                        text: "LIVE EVENT LOG"
+                        font.family: theme ? theme.fontFamilyMono : "monospace"
+                        font.pixelSize: 11
+                        color: theme ? theme.textMuted : "#64748B"
                     }
-
-                    Rectangle {
-                        width: parent.width
-                        height: 1
-                        color: theme ? theme.border : "#1E293B"
-                    }
-
-                    ListView {
-                        width: parent.width
-                        height: parent.height - 60
+                    Repeater {
                         model: [
-                            { severity: "critical", node: "WH_DOCK_07",     time: "2m ago"  },
-                            { severity: "warning",  node: "SERVER_COR_04",  time: "5m ago"  },
-                            { severity: "info",     node: "LOBBY_EAST_01",  time: "12m ago" },
-                            { severity: "info",     node: "PARK_EXT_12",    time: "18m ago" },
-                            { severity: "info",     node: "RETAIL_FLR_02",  time: "24m ago" }
+                            { sev: "CRITICAL", msg: "Unauthorized Person Detected", cam: "WH_DOCK_07", time: "14:41:02", c: "c" },
+                            { sev: "WARNING", msg: "Thermal Threshold Warning", cam: "SERVER_COR_04", time: "14:39:55", c: "w" },
+                            { sev: "CRITICAL", msg: "Camera Signal Interrupted", cam: "PERIM_FNC_09", time: "14:35:12", c: "c" },
+                            { sev: "INFO", msg: "AI Inference Engine Latency", cam: "SYS_HEALTH", time: "14:30:44", c: "i" }
                         ]
-                        spacing: theme ? theme.spacingS : 8
-                        clip: true
-
                         delegate: Row {
                             width: parent.width
-                            spacing: theme ? theme.spacingS : 8
-
-                            Rectangle {
-                                width: 8
-                                height: 8
-                                radius: 4
-                                anchors.verticalCenter: parent.verticalCenter
-                                color: {
-                                    if (modelData.severity === "critical") return theme ? theme.critical : "#EF4444"
-                                    if (modelData.severity === "warning")  return theme ? theme.warning  : "#F59E0B"
-                                    return theme ? theme.info : "#06B6D4"
-                                }
-                            }
-
-                            AppBadge {
-                                theme: control.theme
-                                variant: "subtle"
-                                text: modelData.severity.toUpperCase()
-                            }
-
+                            spacing: 8
                             Text {
-                                text: modelData.node
-                                font.pixelSize: theme ? theme.fontSizeXS : 10
-                                font.family: theme ? theme.fontFamilyMono : "JetBrains Mono"
-                                color: theme ? theme.textPrimary : "#ffffff"
-                                anchors.verticalCenter: parent.verticalCenter
+                                text: modelData.sev
+                                width: 70
+                                font.family: theme ? theme.fontFamilyMono : "monospace"
+                                font.pixelSize: 10
+                                font.weight: Font.Bold
+                                color: modelData.c === "c" ? "#EF4444" : (modelData.c === "w" ? "#F59E0B" : "#06B6D4")
                             }
-
-                            Item { width: 1; height: 1 }
-
-                            Text {
-                                text: modelData.time
-                                font.pixelSize: theme ? theme.fontSizeXS : 10
-                                color: theme ? theme.textDisabled : "#606060"
-                                anchors.verticalCenter: parent.verticalCenter
+                            Column {
+                                width: parent.width - 150
+                                Text { text: modelData.msg; font.pixelSize: 12; color: theme ? theme.textPrimary : "#E5E7EB"; elide: Text.ElideRight; width: parent.width }
+                                Text { text: modelData.cam; font.family: theme ? theme.fontFamilyMono : "monospace"; font.pixelSize: 10; color: theme ? theme.textMuted : "#64748B" }
                             }
+                            Text { text: modelData.time; font.family: theme ? theme.fontFamilyMono : "monospace"; font.pixelSize: 10; color: theme ? theme.textMuted : "#64748B" }
                         }
                     }
                 }

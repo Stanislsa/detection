@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtQuick.Layouts 1.15
 
 /*
  * ClusterMap — boxes-and-lines topology diagram.
@@ -50,7 +51,7 @@ Item {
                         border.width: 1
                         radius: theme ? theme.radiusM : 4
 
-                        Row {
+                        RowLayout {
                             anchors.fill: parent
                             anchors.margins: theme ? theme.spacingS : 8
                             spacing: theme ? theme.spacingS : 8

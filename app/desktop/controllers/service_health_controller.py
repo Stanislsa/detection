@@ -22,7 +22,7 @@ class ServiceHealthController(QObject):
         super().__init__()
         self._service = service
     
-    @pyqtProperty(dict, notify=healthChanged)
+    @pyqtProperty('QVariantMap', notify=healthChanged)
     def systemOverview(self) -> Dict[str, Any]:
         """Vue d'ensemble du système."""
         return self._service.get_system_overview().to_dict()
@@ -32,7 +32,7 @@ class ServiceHealthController(QObject):
         """Liste des services."""
         return [s.to_dict() for s in self._service.get_all_services()]
     
-    @pyqtProperty(dict, notify=healthChanged)
+    @pyqtProperty('QVariantMap', notify=healthChanged)
     def healthStatistics(self) -> Dict[str, Any]:
         """Statistiques de santé."""
         return self._service.get_health_statistics()
@@ -42,7 +42,7 @@ class ServiceHealthController(QObject):
         """Statut global du système."""
         return self._service.get_system_overview().overall_status.value
     
-    @pyqtSlot(str, result=dict)
+    @pyqtSlot(str, result='QVariantMap')
     def getService(self, service_type: str) -> Optional[Dict[str, Any]]:
         """Récupère un service par type."""
         service = self._service.get_service_health(ServiceType(service_type))

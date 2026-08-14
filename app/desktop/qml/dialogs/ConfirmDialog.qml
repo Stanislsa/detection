@@ -44,14 +44,14 @@ AppDialog {
             
             AppButton {
                 text: control.cancelText
-                backgroundColor: theme ? theme.surface : "#2d2d2d"
+                variant: "secondary"
                 theme: control.theme
                 onClicked: control.close()
             }
             
             AppButton {
                 text: control.confirmText
-                backgroundColor: control.isDestructive ? (theme ? theme.danger : "#d13438") : (theme ? theme.primary : "#0078d4")
+                variant: control.isDestructive ? "danger" : "primary"
                 theme: control.theme
                 onClicked: {
                     control.confirmed()

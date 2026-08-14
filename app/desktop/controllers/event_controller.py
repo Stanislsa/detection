@@ -43,7 +43,7 @@ class EventController(QObject):
         """Nombre d'événements critiques."""
         return len(self._service.get_events_by_severity(EventSeverity.CRITICAL))
     
-    @pyqtSlot(str, result=dict)
+    @pyqtSlot(str, result='QVariantMap')
     def getEvent(self, event_id: str) -> Optional[Dict[str, Any]]:
         """Récupère un événement par ID."""
         event = self._service.get_event(event_id)
@@ -136,7 +136,7 @@ class EventController(QObject):
         """Récupère les événements récents."""
         return [event.to_dict() for event in self._service.get_recent_events(hours)]
     
-    @pyqtSlot(result=dict)
+    @pyqtSlot(result='QVariantMap')
     def getEventStatistics(self) -> Dict[str, int]:
         """Récupère les statistiques des événements."""
         return self._service.get_event_statistics()

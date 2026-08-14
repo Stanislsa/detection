@@ -3,359 +3,205 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../../theme"
 import "../../components"
-import "../../cards"
 
-Flickable {
+Item {
     id: control
-    
     property var theme
     property var userController
-    property var router
-    
-    contentWidth: parent.width
-    contentHeight: contentColumn.height + (theme ? theme.spacingXL : 48)
-    clip: true
-    
-    Column {
-        id: contentColumn
-        width: parent.width
-        spacing: theme ? theme.spacingL : 24
-        anchors.top: parent.top
-        anchors.topMargin: theme ? theme.spacingL : 24
-        
-        // Header
+
+    readonly property var users: [
+        { name: "Alex Rivers", email: "A.RIVERS@SENTINEL-AI.SYS", role: "SOC ANALYST", status: "Online", level: 8, last: "Now", initials: "AR" },
+        { name: "Elena Vance", email: "E.VANCE@SENTINEL-AI.SYS", role: "SOC LEAD", status: "Online", level: 9, last: "Now", initials: "EV" },
+        { name: "Marcus Thorne", email: "M.THORNE@SENTINEL-AI.SYS", role: "ADMINISTRATOR", status: "Away", level: 10, last: "12m ago", initials: "MT" },
+        { name: "Sarah Jenkins", email: "S.JENKINS@SENTINEL-AI.SYS", role: "AUDITOR", status: "Offline", level: 4, last: "4h ago", initials: "SJ" },
+        { name: "David Chen", email: "D.CHEN@SENTINEL-AI.SYS", role: "TECHNICIAN", status: "Suspended", level: 2, last: "3d ago", initials: "DC" }
+    ]
+
+    function statusColor(s) {
+        if (s === "Online") return theme ? theme.success : "#10B981"
+        if (s === "Away") return theme ? theme.warning : "#F59E0B"
+        if (s === "Suspended") return theme ? theme.critical : "#EF4444"
+        return theme ? theme.textMuted : "#64748B"
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: theme ? theme.spacingL : 24
+        spacing: theme ? theme.spacingM : 16
+
         RowLayout {
-            width: parent.width
-            spacing: theme ? theme.spacingM : 16
-            
-            Text {
-                text: "User Directory"
-                font.pixelSize: theme ? theme.fontSizeXXL : 32
-                font.bold: true
-                color: theme ? theme.textPrimary : "#ffffff"
-                Layout.alignment: Qt.AlignLeft
+            Layout.fillWidth: true
+            Column {
+                spacing: 4
+                Text { text: "User Directory"; font.pixelSize: theme ? theme.fontSizeXXL : 20; font.weight: Font.Bold; color: theme ? theme.textPrimary : "#E5E7EB" }
+                Text { text: "Manage system access, roles, and security permissions for all personnel."; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" }
             }
-            
-            Item {
-                Layout.fillWidth: true
-            }
-            
-            AppButton {
-                text: "Add User"
-                backgroundColor: theme ? theme.primary : "#0078d4"
-                theme: control.theme
-                Layout.alignment: Qt.AlignRight
-                onClicked: {
-                    // Open CreateUserDialog
-                    createUserLoader.source = "CreateUserDialog.qml"
-                    if (createUserLoader.item) {
-                        createUserLoader.item.open()
-                    }
-                }
-            }
+            Item { Layout.fillWidth: true }
+            AppButton { text: "Export CSV"; variant: "secondary"; theme: control.theme }
+            AppButton { text: "+ Add New User"; variant: "primary"; theme: control.theme }
         }
-        
-        // KPI Cards
+
         RowLayout {
-            anchors.horizontalCenter: parent.horizontalCenter
-            spacing: theme ? theme.spacingM : 16
-            
-            KpiCard {
-                title: "Total Users"
-                value: userController ? userController.userCount : 0
-                icon: "👥"
-                theme: control.theme
-                Layout.preferredWidth: theme ? theme.columnWidthS : 150
-            }
-            
-            KpiCard {
-                title: "Active"
-                value: userController ? userController.userStatistics.active : 0
-                icon: "✅"
-                theme: control.theme
-                Layout.preferredWidth: theme ? theme.columnWidthS : 150
-            }
-            
-            KpiCard {
-                title: "Inactive"
-                value: userController ? userController.userStatistics.inactive : 0
-                icon: "⚪"
-                theme: control.theme
-                Layout.preferredWidth: theme ? theme.columnWidthS : 150
-            }
-            
-            KpiCard {
-                title: "Pending"
-                value: userController ? userController.userStatistics.pending : 0
-                icon: "⏳"
-                theme: control.theme
-                Layout.preferredWidth: theme ? theme.columnWidthS : 150
-            }
-        }
-        
-        // Search and Filters
-        AppCard {
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: parent.width - (theme ? theme.spacingXL : 48) * 2
-            height: theme ? theme.cardHeightM : 80
-            theme: control.theme
-            
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: theme ? theme.spacingM : 16
-                spacing: theme ? theme.spacingM : 16
-                
-                Column {
-                    width: theme ? theme.columnWidthM : 200
-                    spacing: theme ? theme.spacingXS : 4
-                    
-                    Text {
-                        text: "Search"
-                        font.pixelSize: theme ? theme.fontSizeXS : 10
-                        color: theme ? theme.textSecondary : "#a0a0a0"
-                    }
-                    
-                    AppInput {
-                        id: searchInput
-                        width: parent.width
-                        placeholderText: "Search users..."
-                        theme: control.theme
-                        onTextChanged: {
-                            if (userController && text.length > 2) {
-                                filteredUsers = userController.searchUsers(text)
-                            } else {
-                                filteredUsers = userController ? userController.users : []
-                            }
-                        }
-                    }
-                }
-                
-                Column {
-                    width: theme ? theme.columnWidthS : 150
-                    spacing: theme ? theme.spacingXS : 4
-                    
-                    Text {
-                        text: "Role"
-                        font.pixelSize: theme ? theme.fontSizeXS : 10
-                        color: theme ? theme.textSecondary : "#a0a0a0"
-                    }
-                    
-                    AppComboBox {
-                        id: roleFilter
-                        width: parent.width
-                        theme: control.theme
-                        model: ["All", "Admin", "Operator", "Viewer", "Analyst"]
-                        currentIndex: 0
-                        onCurrentTextChanged: {
-                            applyFilters()
-                        }
-                    }
-                }
-                
-                Column {
-                    width: theme ? theme.columnWidthS : 150
-                    spacing: theme ? theme.spacingXS : 4
-                    
-                    Text {
-                        text: "Status"
-                        font.pixelSize: theme ? theme.fontSizeXS : 10
-                        color: theme ? theme.textSecondary : "#a0a0a0"
-                    }
-                    
-                    AppComboBox {
-                        id: statusFilter
-                        width: parent.width
-                        theme: control.theme
-                        model: ["All", "Active", "Inactive", "Pending", "Suspended"]
-                        currentIndex: 0
-                        onCurrentTextChanged: {
-                            applyFilters()
-                        }
-                    }
-                }
-                
-                Item {
-                    Layout.fillWidth: true
-                }
-                
-                AppButton {
-                    text: "Clear Filters"
-                    theme: control.theme
-                    Layout.alignment: Qt.AlignVCenter
-                    onClicked: {
-                        searchInput.text = ""
-                        roleFilter.currentIndex = 0
-                        statusFilter.currentIndex = 0
-                        filteredUsers = userController ? userController.users : []
-                    }
-                }
-            }
-        }
-        
-        // Users Table
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "Users"
-            font.pixelSize: theme ? theme.fontSizeL : 16
-            font.bold: true
-            color: theme ? theme.textPrimary : "#ffffff"
-        }
-        
-        Column {
-            anchors.horizontalCenter: parent.horizontalCenter
-            spacing: theme ? theme.spacingM : 16
-            width: parent.width - (theme ? theme.spacingXL : 48) * 2
-            
+            Layout.fillWidth: true; spacing: 12
             Repeater {
-                model: filteredUsers.length > 0 ? filteredUsers : (userController ? userController.users : [])
-                
-                AppCard {
-                    width: parent.width
-                    height: theme ? theme.cardHeightM : 80
-                    theme: control.theme
-                    border.color: {
-                        if (modelData.status === "active") return theme ? theme.success : "#107c10"
-                        if (modelData.status === "inactive") return theme ? theme.textDisabled : "#606060"
-                        if (modelData.status === "pending") return theme ? theme.warning : "#ff8c00"
-                        if (modelData.status === "suspended") return theme ? theme.danger : "#d13438"
-                        return theme ? theme.border : "#404040"
+                model: [
+                    { t: "TOTAL USERS", v: "142" },
+                    { t: "ACTIVE NOW", v: "38" },
+                    { t: "SUSPENDED", v: "4" },
+                    { t: "ADMINS", v: "12" }
+                ]
+                Rectangle {
+                    Layout.fillWidth: true; height: 72; radius: 4
+                    color: theme ? theme.surface : "#151C28"
+                    border.color: theme ? theme.border : "#1E293B"; border.width: 1
+                    Column {
+                        anchors.centerIn: parent; spacing: 4
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.t; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.v; font.pixelSize: 22; font.weight: Font.Bold; color: theme ? theme.textPrimary : "#E5E7EB" }
                     }
-                    border.width: theme ? theme.borderWidth : 2
-                    
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: theme ? theme.spacingM : 16
-                        spacing: theme ? theme.spacingM : 16
-                        
-                        // Avatar/Initials
-                        Rectangle {
-                            width: theme ? theme.avatarSizeS : 50
-                            height: theme ? theme.avatarSizeS : 50
-                            radius: theme ? theme.avatarSizeS / 2 : 25
-                            color: theme ? theme.surfaceElevated : "#3d3d3d"
-                            Layout.alignment: Qt.AlignVCenter
-                            
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.username ? modelData.username.substring(0, 2).toUpperCase() : "??"
-                                font.pixelSize: theme ? theme.fontSizeL : 16
-                                font.bold: true
-                                color: theme ? theme.textPrimary : "#ffffff"
-                            }
-                        }
-                        
-                        // User info
-                        Column {
-                            Layout.fillWidth: true
-                            spacing: theme ? theme.spacingXS : 4
-                            
-                            Text {
-                                text: modelData.username || "Unknown"
-                                font.pixelSize: theme ? theme.fontSizeM : 14
-                                font.bold: true
-                                color: theme ? theme.textPrimary : "#ffffff"
-                            }
-                            
-                            Text {
-                                text: modelData.email || ""
-                                font.pixelSize: theme ? theme.fontSizeS : 12
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                        }
-                        
-                        // Role and Status
-                        Column {
-                            spacing: theme ? theme.spacingXS : 4
-                            Layout.alignment: Qt.AlignVCenter
-                            
-                            Text {
-                                text: modelData.role || "unknown"
-                                font.pixelSize: theme ? theme.fontSizeS : 12
-                                color: theme ? theme.textSecondary : "#a0a0a0"
-                            }
-                            
-                            Text {
-                                text: modelData.status || "unknown"
-                                font.pixelSize: theme ? theme.fontSizeXS : 10
-                                color: {
-                                    if (modelData.status === "active") return theme ? theme.success : "#107c10"
-                                    if (modelData.status === "inactive") return theme ? theme.textDisabled : "#606060"
-                                    if (modelData.status === "pending") return theme ? theme.warning : "#ff8c00"
-                                    if (modelData.status === "suspended") return theme ? theme.danger : "#d13438"
-                                    return theme ? theme.textSecondary : "#a0a0a0"
-                                }
-                            }
-                        }
-                        
-                        // Last Login
-                        Text {
-                            text: "Last: " + (modelData.last_login_formatted || "Never")
-                            font.pixelSize: theme ? theme.fontSizeXS : 10
-                            color: theme ? theme.textDisabled : "#606060"
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-                        
-                        // Actions
+                }
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            AppInput { Layout.preferredWidth: 280; theme: control.theme; placeholderText: "Search by name, ID, or email…"; leadingIcon: "search" }
+            AppButton { text: "Filters"; variant: "secondary"; theme: control.theme }
+            Item { Layout.fillWidth: true }
+            Text { text: "Showing 1-10 of 142"; font.pixelSize: 11; color: theme ? theme.textMuted : "#64748B" }
+        }
+
+        // User table
+        Rectangle {
+            Layout.fillWidth: true; Layout.fillHeight: true
+            radius: 4; color: theme ? theme.surface : "#151C28"
+            border.color: theme ? theme.border : "#1E293B"; border.width: 1
+            clip: true
+
+            ColumnLayout {
+                anchors.fill: parent; spacing: 0
+
+                Rectangle {
+                    Layout.fillWidth: true; height: 36
+                    color: theme ? theme.backgroundAlt : "#0F172A"
+                    Row {
+                        anchors.fill: parent; anchors.leftMargin: 16; spacing: 0
+                        Text { width: 220; anchors.verticalCenter: parent.verticalCenter; text: "USER PROFILE"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                        Text { width: 140; anchors.verticalCenter: parent.verticalCenter; text: "ROLE & AUTHORITY"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                        Text { width: 90; anchors.verticalCenter: parent.verticalCenter; text: "STATUS"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                        Text { width: 100; anchors.verticalCenter: parent.verticalCenter; text: "ACCESS LEVEL"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                        Text { anchors.verticalCenter: parent.verticalCenter; text: "LAST ACTIVITY"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                    }
+                }
+
+                ListView {
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    model: control.users; clip: true
+                    delegate: Rectangle {
+                        width: ListView.view.width; height: 64
+                        color: index % 2 === 0 ? "transparent" : (theme ? theme.backgroundAlt : "#0F172A")
                         Row {
-                            spacing: theme ? theme.spacingXS : 4
-                            Layout.alignment: Qt.AlignVCenter
-                            
-                            AppButton {
-                                text: "View"
-                                backgroundColor: theme ? theme.surface : "#2d2d2d"
-                                theme: control.theme
-                                onClicked: {
-                                    if (router) {
-                                        router.navigateTo("user_detail", {"userId": modelData.id})
-                                    }
+                            anchors.fill: parent; anchors.leftMargin: 16; spacing: 0
+                            // profile
+                            Row {
+                                width: 220; anchors.verticalCenter: parent.verticalCenter; spacing: 10
+                                Rectangle {
+                                    width: 36; height: 36; radius: 18
+                                    color: theme ? theme.primary : "#2563EB"
+                                    Text { anchors.centerIn: parent; text: modelData.initials; font.pixelSize: 12; font.weight: Font.Bold; color: "#FFF" }
+                                }
+                                Column {
+                                    anchors.verticalCenter: parent.verticalCenter; spacing: 2
+                                    Text { text: modelData.name; font.pixelSize: 13; font.weight: Font.DemiBold; color: theme ? theme.textPrimary : "#E5E7EB" }
+                                    Text { text: modelData.email; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
                                 }
                             }
-                            
-                            AppButton {
-                                text: "Edit"
-                                backgroundColor: theme ? theme.primary : "#0078d4"
-                                theme: control.theme
-                                onClicked: {
-                                    // Open EditUserDialog
+                            // role
+                            Rectangle {
+                                width: 120; height: 22; radius: 4
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: theme ? theme.surfaceElevated : "#1E293B"
+                                border.color: theme ? theme.border : "#1E293B"; border.width: 1
+                                Text { anchors.centerIn: parent; text: modelData.role; font.pixelSize: 9; font.weight: Font.Bold; color: theme ? theme.textSecondary : "#94A3B8" }
+                            }
+                            Item { width: 20; height: 1 }
+                            // status
+                            Row {
+                                width: 90; anchors.verticalCenter: parent.verticalCenter; spacing: 6
+                                Rectangle { width: 8; height: 8; radius: 4; color: control.statusColor(modelData.status); anchors.verticalCenter: parent.verticalCenter }
+                                Text { text: modelData.status; font.pixelSize: 12; color: control.statusColor(modelData.status); anchors.verticalCenter: parent.verticalCenter }
+                            }
+                            // level
+                            Column {
+                                width: 100; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+                                Text { text: "LVL " + modelData.level; font.pixelSize: 11; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textSecondary : "#94A3B8" }
+                                Rectangle {
+                                    width: 80; height: 4; radius: 2; color: theme ? theme.backgroundAlt : "#0F172A"
+                                    Rectangle { width: parent.width * (modelData.level / 10); height: parent.height; radius: 2; color: theme ? theme.primary : "#2563EB" }
                                 }
                             }
+                            Text { anchors.verticalCenter: parent.verticalCenter; text: modelData.last; font.pixelSize: 12; color: theme ? theme.textMuted : "#64748B" }
                         }
                     }
                 }
             }
         }
-    }
-    
-    property var filteredUsers: []
-    
-    function applyFilters() {
-        if (!userController) return
-        
-        var users = userController.users
-        var role = roleFilter.currentText.toLowerCase()
-        var status = statusFilter.currentText.toLowerCase()
-        
-        if (role !== "all") {
-            users = users.filter(function(u) { return u.role === role })
-        }
-        if (status !== "all") {
-            users = users.filter(function(u) { return u.status === status })
-        }
-        
-        filteredUsers = users
-    }
-    
-    Component.onCompleted: {
-        filteredUsers = userController ? userController.users : []
-    }
-    
-    // Loader for CreateUserDialog
-    Loader {
-        id: createUserLoader
-        sourceComponent: Component {
-            CreateUserDialog {
-                theme: control.theme
-                userController: control.userController
+
+        // Bottom: Active Sessions + Audit Log
+        RowLayout {
+            Layout.fillWidth: true; Layout.preferredHeight: 180; spacing: 16
+
+            Rectangle {
+                Layout.fillWidth: true; Layout.fillHeight: true
+                radius: 4; color: theme ? theme.surface : "#151C28"
+                border.color: theme ? theme.border : "#1E293B"; border.width: 1
+                Column {
+                    anchors.fill: parent; anchors.margins: 16; spacing: 10
+                    Text { text: "Active Sessions"; font.pixelSize: 13; font.weight: Font.DemiBold; color: theme ? theme.textPrimary : "#E5E7EB" }
+                    Repeater {
+                        model: [
+                            { n: "Alex Rivers", ip: "192.168.1.42", loc: "HQ - Room 4B" },
+                            { n: "Elena Vance", ip: "192.168.1.101", loc: "Remote VPN" },
+                            { n: "Marcus Thorne", ip: "10.0.4.15", loc: "Data Center 1" }
+                        ]
+                        Row {
+                            width: parent.width; spacing: 8
+                            Text { text: modelData.n; width: 110; font.pixelSize: 12; color: theme ? theme.textPrimary : "#E5E7EB" }
+                            Text { text: modelData.ip; width: 110; font.pixelSize: 11; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                            Text { text: modelData.loc; font.pixelSize: 11; color: theme ? theme.textSecondary : "#94A3B8" }
+                            Item { width: 8; height: 1 }
+                            Rectangle {
+                                width: 48; height: 16; radius: 8; color: "#10B98122"
+                                Text { anchors.centerIn: parent; text: "ACTIVE"; font.pixelSize: 9; font.weight: Font.Bold; color: theme ? theme.success : "#10B981" }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true; Layout.fillHeight: true
+                radius: 4; color: theme ? theme.surface : "#151C28"
+                border.color: theme ? theme.border : "#1E293B"; border.width: 1
+                Column {
+                    anchors.fill: parent; anchors.margins: 16; spacing: 8
+                    Text { text: "Security Governance Log"; font.pixelSize: 13; font.weight: Font.DemiBold; color: theme ? theme.textPrimary : "#E5E7EB" }
+                    Repeater {
+                        model: [
+                            { ts: "2024-05-24 14:22:01", act: "PERMISSION_CHANGE", who: "M. Thorne", tgt: "A. Rivers" },
+                            { ts: "2024-05-24 13:45:12", act: "USER_LOGIN_FAILED", who: "SYSTEM", tgt: "D. Chen" },
+                            { ts: "2024-05-24 11:10:55", act: "NEW_USER_CREATED", who: "E. Vance", tgt: "S. Jenkins" },
+                            { ts: "2024-05-24 09:30:22", act: "ROLE_UPGRADE", who: "M. Thorne", tgt: "E. Vance" }
+                        ]
+                        Row {
+                            width: parent.width; spacing: 8
+                            Text { text: modelData.ts; width: 140; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                            Text { text: modelData.act; width: 140; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; font.weight: Font.Bold; color: theme ? theme.warning : "#F59E0B" }
+                            Text { text: modelData.who; width: 70; font.pixelSize: 10; color: theme ? theme.textSecondary : "#94A3B8" }
+                            Text { text: modelData.tgt; font.pixelSize: 10; color: theme ? theme.textSecondary : "#94A3B8" }
+                        }
+                    }
+                }
             }
         }
     }

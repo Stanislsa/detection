@@ -7,10 +7,11 @@ Rectangle {
     id: control
     property var theme
     property string title: ""
-    property string glyph: ""     // new — single-character symbol from Icons registry
-    property string icon: ""      // legacy alias for glyph (back-compat)
+    property string glyph: ""
+    property string icon: ""
     property bool active: false
     property bool hovered: false
+    property bool collapsed: false
 
     implicitHeight: 40
     color: control.active ? (theme ? theme.surfaceElevated : "#1E293B")
@@ -19,48 +20,73 @@ Rectangle {
 
     Behavior on color { ColorAnimation { duration: 150 } }
 
-    // Left rail (4px) for active item
+    // Left rail for active item
     Rectangle {
         visible: control.active
         width: 3
         height: parent.height
         color: theme ? theme.primary : "#2563EB"
-
         Behavior on color { ColorAnimation { duration: 150 } }
     }
 
-    Row {
-        anchors.fill: parent
-        anchors.leftMargin: theme ? theme.spacingM : 16
-        anchors.rightMargin: theme ? theme.spacingM : 16
-        spacing: theme ? theme.spacingM : 16
+    // Tooltip when collapsed
+    ToolTip {
+        visible: control.collapsed && control.hovered
+        text: control.title
+        delay: 200
+        timeout: 3000
+    }
 
+    Item {
+        anchors.fill: parent
+        anchors.leftMargin: control.collapsed ? 0 : (theme ? theme.spacingM : 16)
+        anchors.rightMargin: control.collapsed ? 0 : (theme ? theme.spacingM : 16)
+
+        // Collapsed: centered icon only
         AppIcon {
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.centerIn: parent
+            visible: control.collapsed
             width: theme ? theme.iconSizeM : 16
             height: theme ? theme.iconSizeM : 16
             iconName: control.glyph !== "" ? control.glyph : control.icon
             iconColor: control.active ? (theme ? theme.primary : "#2563EB")
                  : (control.hovered ? (theme ? theme.textPrimary : "#E5E7EB")
                                     : (theme ? theme.textSecondary : "#94A3B8"))
-
             Behavior on iconColor { ColorAnimation { duration: 150 } }
         }
 
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: control.title
-            font.family: theme ? theme.fontFamily : "Inter"
-            font.pixelSize: theme ? theme.fontSizeM : 13
-            font.weight: control.active && theme ? theme.weightSemiBold : Font.Normal
-            color: control.active ? (theme ? theme.textPrimary : "#E5E7EB")
-                 : (control.hovered ? (theme ? theme.textPrimary : "#E5E7EB")
-                                    : (theme ? theme.textSecondary : "#94A3B8"))
+        // Expanded: icon + text
+        Row {
+            anchors.fill: parent
+            spacing: theme ? theme.spacingM : 16
+            visible: !control.collapsed
+            opacity: control.collapsed ? 0 : 1
+            Behavior on opacity { NumberAnimation { duration: 140 } }
 
-            Behavior on color { ColorAnimation { duration: 150 } }
+            AppIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                width: theme ? theme.iconSizeM : 16
+                height: theme ? theme.iconSizeM : 16
+                iconName: control.glyph !== "" ? control.glyph : control.icon
+                iconColor: control.active ? (theme ? theme.primary : "#2563EB")
+                     : (control.hovered ? (theme ? theme.textPrimary : "#E5E7EB")
+                                        : (theme ? theme.textSecondary : "#94A3B8"))
+                Behavior on iconColor { ColorAnimation { duration: 150 } }
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: control.title
+                font.family: theme ? theme.fontFamily : "Inter"
+                font.pixelSize: theme ? theme.fontSizeM : 13
+                font.weight: control.active && theme ? theme.weightSemiBold : Font.Normal
+                color: control.active ? (theme ? theme.textPrimary : "#E5E7EB")
+                     : (control.hovered ? (theme ? theme.textPrimary : "#E5E7EB")
+                                        : (theme ? theme.textSecondary : "#94A3B8"))
+                Behavior on color { ColorAnimation { duration: 150 } }
+                elide: Text.ElideRight
+            }
         }
-
-        Item { width: 1; height: parent.height }
     }
 
     MouseArea {

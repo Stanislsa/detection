@@ -23,6 +23,7 @@ Column {
     // `onAccepted:` directly on AppInput (Qt 6 removed signal auto-forwarding
     // from child items).
     signal accepted()
+    signal editingFinished()
 
     spacing: theme ? theme.spacingXS : 4
 
@@ -51,6 +52,7 @@ Column {
         font.pixelSize: control.theme ? control.theme.fontSizeM : 13
         selectByMouse: true
         onAccepted: control.accepted()
+        onEditingFinished: control.editingFinished()
         background: Rectangle {
             implicitHeight: control.theme ? control.theme.inputHeight : 36
             color: control.theme ? control.theme.surfaceAlt : "#1B2433"
@@ -62,14 +64,16 @@ Column {
 
             Behavior on border.color { ColorAnimation { duration: 150 } }
 
-            Text {
+            AppIcon {
                 visible: control.leadingIcon !== ""
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left
                 anchors.leftMargin: control.theme ? control.theme.spacingS : 8
-                text: control.leadingIcon
-                color: control.theme ? control.theme.textSecondary : "#94A3B8"
-                font.pixelSize: control.theme ? control.theme.fontSizeM : 13
+                width: control.theme ? control.theme.iconSizeS : 14
+                height: control.theme ? control.theme.iconSizeS : 14
+                iconName: control.leadingIcon
+                iconColor: control.theme ? control.theme.textSecondary : "#94A3B8"
+                theme: control.theme
             }
         }
     }

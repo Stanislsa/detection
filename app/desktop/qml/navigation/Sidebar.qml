@@ -10,9 +10,15 @@ Rectangle {
     property var theme
     property string currentPage: "dashboard"
     property var icons: theme ? theme.iconsList : null
+    property bool collapsed: false
 
-    implicitWidth: theme.sidebarWidth
+    implicitWidth: collapsed ? (theme ? theme.sidebarCollapsedWidth : 64)
+                             : (theme ? theme.sidebarWidth : 240)
     color: theme.surface
+
+    Behavior on color {
+        ColorAnimation { duration: 280; easing.type: Easing.InOutQuad }
+    }
 
     Column {
         anchors.fill: parent
@@ -24,9 +30,16 @@ Rectangle {
             height: theme.headerHeight
             color: theme.surface
 
+            Behavior on color { ColorAnimation { duration: 280 } }
+
+            // Expanded logo
             Column {
                 anchors.centerIn: parent
                 spacing: 2
+                visible: !control.collapsed
+                opacity: control.collapsed ? 0 : 1
+                Behavior on opacity { NumberAnimation { duration: 160 } }
+
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "SENTINEL"
@@ -46,6 +59,27 @@ Rectangle {
                 }
             }
 
+            // Collapsed icon
+            Rectangle {
+                anchors.centerIn: parent
+                width: 28
+                height: 28
+                radius: 6
+                color: theme.primary
+                visible: control.collapsed
+                opacity: control.collapsed ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 160 } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "S"
+                    font.family: theme.fontFamilyMono
+                    font.pixelSize: 14
+                    font.weight: theme.weightBold
+                    color: "#FFFFFF"
+                }
+            }
+
             Rectangle {
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -56,15 +90,19 @@ Rectangle {
         }
 
         // ---- Navigation list ----
-        Item {
+        Flickable {
             width: parent.width
-            height: parent.height - logoFooterContainer.height - footerSpacer.height
+            height: parent.height - theme.headerHeight - 56
+            contentHeight: navColumn.height
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
 
             Column {
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
+                id: navColumn
+                width: parent.width
                 spacing: 2
+                topPadding: 8
+                bottomPadding: 8
 
                 SidebarItem {
                     width: parent.width
@@ -72,6 +110,7 @@ Rectangle {
                     glyph: control.icons ? control.icons.dashboard : "▣"
                     active: control.currentPage === "dashboard"
                     theme: control.theme
+                    collapsed: control.collapsed
                     onClicked: control.pageChanged("dashboard")
                 }
                 SidebarItem {
@@ -80,6 +119,7 @@ Rectangle {
                     glyph: control.icons ? control.icons.cameras : "□"
                     active: control.currentPage === "cameras"
                     theme: control.theme
+                    collapsed: control.collapsed
                     onClicked: control.pageChanged("cameras")
                 }
                 SidebarItem {
@@ -88,6 +128,7 @@ Rectangle {
                     glyph: control.icons ? control.icons.alerts : "⚠"
                     active: control.currentPage === "alerts" || control.currentPage === "incidents"
                     theme: control.theme
+                    collapsed: control.collapsed
                     onClicked: control.pageChanged("alerts")
                 }
                 SidebarItem {
@@ -96,6 +137,7 @@ Rectangle {
                     glyph: control.icons ? control.icons.events : "⧉"
                     active: control.currentPage === "events"
                     theme: control.theme
+                    collapsed: control.collapsed
                     onClicked: control.pageChanged("events")
                 }
                 SidebarItem {
@@ -104,6 +146,7 @@ Rectangle {
                     glyph: control.icons ? control.icons.users : "☰"
                     active: control.currentPage === "users"
                     theme: control.theme
+                    collapsed: control.collapsed
                     onClicked: control.pageChanged("users")
                 }
                 SidebarItem {
@@ -112,6 +155,7 @@ Rectangle {
                     glyph: control.icons ? control.icons.aiTraining : "⚙"
                     active: control.currentPage === "ai_training"
                     theme: control.theme
+                    collapsed: control.collapsed
                     onClicked: control.pageChanged("ai_training")
                 }
                 SidebarItem {
@@ -120,6 +164,7 @@ Rectangle {
                     glyph: control.icons ? control.icons.observability : "⁂"
                     active: control.currentPage === "observability"
                     theme: control.theme
+                    collapsed: control.collapsed
                     onClicked: control.pageChanged("observability")
                 }
                 SidebarItem {
@@ -128,6 +173,7 @@ Rectangle {
                     glyph: control.icons ? control.icons.systemHealth : "♥"
                     active: control.currentPage === "system_health" || control.currentPage === "health"
                     theme: control.theme
+                    collapsed: control.collapsed
                     onClicked: control.pageChanged("system_health")
                 }
                 SidebarItem {
@@ -136,25 +182,19 @@ Rectangle {
                     glyph: control.icons ? control.icons.settings : "☸"
                     active: control.currentPage === "settings"
                     theme: control.theme
+                    collapsed: control.collapsed
                     onClicked: control.pageChanged("settings")
                 }
             }
         }
 
-        // ---- Spacer pushes footer to the bottom ----
-        Item {
-            id: footerSpacer
-            width: parent.width
-            height: parent.height - logoFooterContainer.height
-            visible: false
-        }
-
-        // ---- Footer: AXYRIS SECURITY ----
+        // ---- Footer ----
         Rectangle {
-            id: logoFooterContainer
             width: parent.width
             height: 56
             color: theme.backgroundAlt
+
+            Behavior on color { ColorAnimation { duration: 280 } }
 
             Rectangle {
                 anchors.left: parent.left
@@ -164,14 +204,21 @@ Rectangle {
                 color: theme.border
             }
 
+            // Expanded footer
             Column {
                 anchors.centerIn: parent
                 spacing: 2
+                visible: !control.collapsed
+                opacity: control.collapsed ? 0 : 1
 
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 4
-                    Rectangle { width: 6; height: 6; radius: 3; color: theme.success; anchors.verticalCenter: parent.verticalCenter }
+                    Rectangle {
+                        width: 6; height: 6; radius: 3
+                        color: theme.success
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                     Text {
                         text: "AXYRIS SECURITY"
                         font.family: theme.fontFamilyMono
@@ -188,6 +235,14 @@ Rectangle {
                     font.pixelSize: theme.fontSizeXS
                     color: theme.textMuted
                 }
+            }
+
+            // Collapsed footer indicator
+            Rectangle {
+                anchors.centerIn: parent
+                width: 8; height: 8; radius: 4
+                color: theme.success
+                visible: control.collapsed
             }
         }
     }
