@@ -508,7 +508,7 @@ class CameraManager(QObject):
                 instance = self._cameras[camera_id]
                 instance.state = CameraState.ERROR
                 instance.statistics["errors"] += 1
-                self.camera_state_changed.emit(camera_id, self.camera_state_changed.emit(camera_id, CameraState.ERROR.value))
+                self.camera_state_changed.emit(camera_id, CameraState.ERROR.value)
                 self.error_occurred.emit(camera_id, error)
     
     def _on_detection_result(self, camera_id: str, frame, results):

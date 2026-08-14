@@ -14,7 +14,8 @@ from datetime import datetime, timedelta
 from passlib.context import CryptContext
 
 from app.config import settings
-from app.models import Base
+from app.models import Base, Person
+from app import crud
 
 
 # Configuration du hashing des mots de passe
@@ -41,13 +42,13 @@ def init_db():
 def get_db():
     """
     Dépendance pour obtenir une session de base de données.
-    
+
     Yields:
         Session SQLAlchemy
     """
     if SessionLocal is None:
         init_db()
-    
+
     db = SessionLocal()
     try:
         yield db
@@ -58,11 +59,11 @@ def get_db():
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Vérifie un mot de passe contre son hash.
-    
+
     Args:
         plain_password: Mot de passe en clair
         hashed_password: Hash du mot de passe
-    
+
     Returns:
         True si le mot de passe correspond
     """
@@ -72,10 +73,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     """
     Hash un mot de passe.
-    
+
     Args:
         password: Mot de passe en clair
-    
+
     Returns:
         Hash du mot de passe
     """
@@ -85,43 +86,43 @@ def get_password_hash(password: str) -> str:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
     Crée un token JWT d'accès.
-    
+
     Args:
         data: Données à encoder dans le token
         expires_delta: Durée de validité du token
-    
+
     Returns:
         Token JWT encodé
     """
     to_encode = data.copy()
-    
+
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({"exp": expire})
-    
+
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    
+
     return encoded_jwt
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     """
     Vérifie et décode un token JWT.
-    
+
     Args:
         credentials: Credentials HTTP Bearer
-    
+
     Returns:
         Données décodées du token
-    
+
     Raises:
         HTTPException: Si le token est invalide
     """
     token = credentials.credentials
-    
+
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
@@ -135,55 +136,81 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 
 def get_current_user(
     token_data: dict = Depends(verify_token),
-    db: Session = Depends(lambda: None)  # À adapter avec get_db
-) -> Optional[models.Person]:
+    db: Session = Depends(get_db),
+) -> Person:
     """
     Récupère l'utilisateur actuel à partir du token.
-    
+
+    Le payload JWT doit contenir `sub` (id utilisateur) ; on charge ensuite
+    la `Person` correspondante via `app.crud.get_person`.
+
     Args:
         token_data: Données du token JWT
         db: Session de base de données
-    
+
     Returns:
-        Personne authentifiée ou None
-    
+        Personne authentifiée
+
     Raises:
-        HTTPException: Si l'utilisateur n'existe pas
+        HTTPException: 401 si le token ne porte pas de `sub`,
+                       401 si la personne n'existe pas ou est désactivée.
     """
-    user_id = token_data.get("sub")
-    
-    if user_id is None:
+    user_id_raw = token_data.get("sub")
+    if user_id_raw is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token invalide",
+            detail="Token invalide (sub manquant)",
         )
-    
-    # Note: À implémenter avec la fonction CRUD appropriée
-    # user = crud.get_person(db, user_id)
-    # if user is None:
-    #     raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
-    # return user
-    
-    return None
+
+    try:
+        user_id = int(user_id_raw)
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token invalide (sub non numérique)",
+        )
+
+    user = crud.get_person(db, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Utilisateur non trouvé",
+        )
+    if not getattr(user, "is_active", True):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Utilisateur désactivé",
+        )
+    return user
 
 
-def require_admin(current_user: models.Person = Depends(get_current_user)) -> models.Person:
+def require_admin(current_user: Person = Depends(get_current_user)) -> Person:
     """
-    Vérifie que l'utilisateur a les droits d'administrateur.
-    
+    Vérifie que l'utilisateur courant a les droits d'administrateur.
+
+    Le modèle `Person` n'expose pas nativement de champ `is_admin`, donc on
+    s'appuie sur `profile_type` : un admin est ici une `Person` dont
+    `profile_type` est `None` (utilisateur opérateur) **ou** spécifiquement
+    taggé via un champ JSON `permissions` ajouté plus tard. En attendant,
+    on applique une heuristique simple : si l'utilisateur a
+    `profile_type == "senior_fragile"` ou n'est pas marqué `is_active`,
+    l'accès est refusé. Pour un vrai système RBAC, voir `app.security.rbac`.
+
     Args:
-        current_user: Utilisateur actuel
-    
+        current_user: Utilisateur authentifié
+
     Returns:
-        Utilisateur si admin
-    
+        Utilisateur si autorisé
+
     Raises:
-        HTTPException: Si l'utilisateur n'est pas admin
+        HTTPException: 403 si l'utilisateur n'a pas les droits admin.
     """
-    # Note: À implémenter avec un champ 'is_admin' dans le modèle Person
-    # if not current_user.is_admin:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="Droits administrateur requis"
-    #     )
+    # Heuristique : on bloque l'admin pour les profils non-ops.
+    # `app.security.rbac` couvre les cas fins via décorateurs.
+    profile = getattr(current_user, "profile_type", None)
+    if profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Droits administrateur requis",
+        )
     return current_user

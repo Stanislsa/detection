@@ -7,25 +7,25 @@ ai:
     
   # Modèles YOLO
   yolo:
-    default_model: "yolov8n.pt"
+    default_model: "yolo11n.pt"
     models_path: "models/yolo"
     download_on_missing: true
-    
+
     # Modèles disponibles
     available:
-      - name: "yolov8n.pt"
+      - name: "yolo11n.pt"
         size: "nano"
         speed: "fast"
         accuracy: "medium"
-      - name: "yolov8s.pt"
+      - name: "yolo11s.pt"
         size: "small"
         speed: "medium"
         accuracy: "good"
-      - name: "yolov8m.pt"
+      - name: "yolo11m.pt"
         size: "medium"
         speed: "slow"
         accuracy: "high"
-      - name: "yolov8l.pt"
+      - name: "yolo11l.pt"
         size: "large"
         speed: "very_slow"
         accuracy: "very_high"

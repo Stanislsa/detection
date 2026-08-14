@@ -119,7 +119,7 @@ class PipelineIntegrationTest:
         print("\n[TEST 3] Initialisation du détecteur YOLO...")
         try:
             detector = YOLODetector(
-                model_path="yolov8n.pt",
+                model_path="yolo11n.pt",
                 device="cpu"  # Utiliser CPU pour le test
             )
             print("✓ Détecteur YOLO initialisé")

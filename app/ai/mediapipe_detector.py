@@ -5,6 +5,7 @@ Spécialisé pour la détection de chutes via l'analyse de pose.
 
 from typing import List, Tuple, Dict, Any, Optional
 import numpy as np
+import cv2
 
 try:
     import mediapipe as mp
@@ -328,7 +329,3 @@ class MediaPipeFallDetector(MediaPipePoseDetector):
                 
         except (IndexError, KeyError):
             return "unknown"
-
-
-# Import cv2 pour la conversion BGR->RGB
-import cv2

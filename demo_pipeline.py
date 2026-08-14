@@ -114,7 +114,7 @@ class PipelineDemo:
         try:
             detector = self.inference_scheduler.create_detector(
                 backend="cpu",  # Utiliser CPU pour la démo
-                model_path="yolov8n.pt"
+                model_path="yolo11n.pt"
             )
             print("✓ Détecteur créé")
         except Exception as e:

@@ -321,21 +321,23 @@ class ResilienceTest:
         
         # Simuler une charge CPU élevée
         print("Simulation: Charge CPU élevée...")
+        stop_event = threading.Event()
         def cpu_load():
-            while True:
+            while not stop_event.is_set():
                 _ = sum(i * i for i in range(10000))
-        
+
         thread = threading.Thread(target=cpu_load)
         thread.daemon = True
         thread.start()
-        
+
         # Mesurer CPU pendant la charge
         time.sleep(2)
         cpu_during = psutil.cpu_percent(interval=1)
         print(f"CPU pendant charge: {cpu_during:.1f}%")
-        
-        # Arrêter la charge
-        thread.stop = True
+
+        # Arrêter la charge via Event + join
+        stop_event.set()
+        thread.join(timeout=5)
         
         # Mesurer CPU après
         time.sleep(2)
@@ -507,7 +509,7 @@ class ResilienceTest:
             
             # Créer un détecteur
             try:
-                detector = YOLODetector(model_path="yolov8n.pt", device="cpu")
+                detector = YOLODetector(model_path="yolo11n.pt", device="cpu")
                 
                 # Démarrer la détection
                 self.camera_manager.start_detection("detection_restart_camera", detector)

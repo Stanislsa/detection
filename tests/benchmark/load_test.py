@@ -118,7 +118,7 @@ class LoadTest:
         # Créer un détecteur partagé
         try:
             detector = YOLODetector(
-                model_path="yolov8n.pt",
+                model_path="yolo11n.pt",
                 device="cpu"
             )
         except Exception as e:

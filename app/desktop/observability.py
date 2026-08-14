@@ -137,8 +137,7 @@ class ObservabilityService(QObject):
             "inference_time_ms": 500.0,
             "queue_drop_rate": 0.1
         }
-        
-        self._initialized = True
+
         self._logger.info("ObservabilityService initialisé")
     
     def _collect_metrics(self):

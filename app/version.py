@@ -16,18 +16,18 @@ class VersionInfo:
     
     # Version du modèle IA
     ai_model_version: str = "1.0.0"
-    ai_model_name: str = "yolov8n.pt"
-    
+    ai_model_name: str = "yolo11n.pt"
+
     # Version du schéma de base de données
     db_schema_version: str = "1.0.0"
-    
+
     # Numéro de build
     build_number: str = "1"
     build_date: str = None
-    
+
     # Informations supplémentaires
     environment: str = "development"  # development, staging, production
-    python_version: str = "3.10+"
+    python_version: str = "3.10-3.11"
     
     def __post_init__(self):
         if self.build_date is None:

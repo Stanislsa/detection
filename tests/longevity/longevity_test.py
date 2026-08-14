@@ -87,7 +87,7 @@ class LongevityTest:
                 
                 # Créer un détecteur
                 try:
-                    detector = YOLODetector(model_path="yolov8n.pt", device="cpu")
+                    detector = YOLODetector(model_path="yolo11n.pt", device="cpu")
                     self.camera_manager.start_detection(camera_id, detector)
                 except Exception as e:
                     print(f"⚠ Impossible de créer le détecteur: {e}")

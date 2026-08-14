@@ -248,7 +248,7 @@ logging_config = config.get_logging_config()
 
 # Accéder à une valeur spécifique
 backend_host = config.get("application", "backend.host", "localhost")
-model_path = config.get("ai", "yolo.default_model", "yolov8n.pt")
+model_path = config.get("ai", "yolo.default_model", "yolo11n.pt")
 
 # Recharger une configuration
 config.reload("cameras")
@@ -278,7 +278,7 @@ print(info)
 # Créer un détecteur
 detector = scheduler.create_detector(
     backend=InferenceBackend.AUTO,
-    model_path="yolov8n.pt"
+    model_path="yolo11n.pt"
 )
 
 # Forcer un backend
@@ -414,7 +414,7 @@ worker.error_occurred.connect(callback)
 from app.ai.yolo_detector import YOLODetector
 
 detector = YOLODetector(
-    model_path="yolov8n.pt",
+    model_path="yolo11n.pt",
     device="cuda"  # cpu, cuda, auto
 )
 

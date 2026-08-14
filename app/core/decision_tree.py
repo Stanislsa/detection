@@ -145,10 +145,15 @@ class DecisionTree:
         # Détection du mouvement post-chute
         movement = self._detect_post_fall_movement(detection)
         
+        # Âge: lu depuis le profil de la personne détectée si dispo, sinon fallback 70.
+        # TODO: brancher sur le chargement du profil complet (actuellement `detection` ne porte
+        # que les métriques d'impact, pas l'identité de la personne).
+        age = getattr(detection, 'person_age', None) or 70
+
         gravity = self.scorer.calculate(
             impact_velocity=abs(physics.vertical_velocity),
             time_on_ground=detection.post_impact_time,
-            age=70,  # TODO: récupérer depuis le profil
+            age=age,
             body_part_hit=body_part,
             posture_on_ground=posture,
             trunk_angle=physics.trunk_angle,

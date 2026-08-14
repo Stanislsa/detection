@@ -321,7 +321,7 @@ class HealthService(QObject):
             from app.core.config_loader import get_config_loader
             config = get_config_loader()
             
-            model_path = config.get("ai", "yolo.default_model", "yolov8n.pt")
+            model_path = config.get("ai", "yolo.default_model", "yolo11n.pt")
             
             from pathlib import Path
             model_file = Path(model_path)
