@@ -1,173 +1,126 @@
 """
-Worker pour la capture vidéo des caméras.
-Utilise QThread pour ne pas bloquer l'interface lors de la capture.
+Worker pour la gestion des caméras.
+Exécute les opérations de caméra dans un thread séparé pour ne pas bloquer l'UI.
 """
 
-from PyQt6.QtCore import pyqtSignal
-from typing import Optional, Tuple
-import cv2
-import numpy as np
+from typing import Optional, Dict, Any
+from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMutex, QMutexLocker, QWaitCondition
+from PyQt6.QtGui import QImage
+import time
+import random
 
-from app.desktop.workers.base_worker import BaseWorker, WorkerStatus
-from app.core.logger import get_logger
+from app.desktop.models.camera_model import Camera, CameraStatus
+from app.desktop.services.camera_service import CameraService
 
 
-class CameraWorker(BaseWorker):
-    """
-    Worker pour la capture vidéo depuis une source (webcam, RTSP, fichier).
-    """
+class CameraWorker(QThread):
+    """Worker pour gérer les flux vidéo des caméras."""
     
     # Signaux
-    frame_ready = pyqtSignal(np.ndarray)  # Nouveau frame disponible
-    camera_connected = pyqtSignal(str)  # camera_id
-    camera_disconnected = pyqtSignal(str)  # camera_id
-    fps_changed = pyqtSignal(float)  # FPS actuels
+    frameReady = pyqtSignal(object)  # QImage
+    statusChanged = pyqtSignal(str, str)  # cameraId, status
+    errorOccurred = pyqtSignal(str, str)  # cameraId, errorMessage
     
-    def __init__(self, camera_id: str, source: str, source_type: str = "webcam", parent=None):
-        """
-        Initialise le worker de caméra.
+    def __init__(self, camera_service: CameraService):
+        super().__init__()
+        self._camera_service = camera_service
+        self._mutex = QMutex()
+        self._condition = QWaitCondition()
         
-        Args:
-            camera_id: ID de la caméra
-            source: Source vidéo (webcam index, RTSP URL, fichier)
-            source_type: Type de source (webcam, rtsp, file)
-        """
-        super().__init__(parent)
-        self.camera_id = camera_id
-        self.source = source
-        self.source_type = source_type
-        self._cap: Optional[cv2.VideoCapture] = None
-        self._fps = 0.0
-        self._frame_count = 0
-        self._start_time = 0
+        self._active_cameras: Dict[str, Dict[str, Any]] = {}
+        self._running = False
+        
+    def add_camera(self, camera: Camera):
+        """Ajoute une caméra à surveiller."""
+        locker = QMutexLocker(self._mutex)
+        if camera.id not in self._active_cameras:
+            self._active_cameras[camera.id] = {
+                'camera': camera,
+                'active': True
+            }
+            self._condition.wakeAll()
     
-    def _run_impl(self):
-        """Implémentation de la capture vidéo."""
-        self._logger.info(f"Démarrage capture caméra {self.camera_id} depuis {self.source}")
+    def remove_camera(self, camera_id: str):
+        """Retire une caméra de la surveillance."""
+        locker = QMutexLocker(self._mutex)
+        if camera_id in self._active_cameras:
+            self._active_cameras[camera_id]['active'] = False
+            del self._active_cameras[camera_id]
+    
+    def start_camera(self, camera_id: str):
+        """Démarre le flux d'une caméra."""
+        locker = QMutexLocker(self._mutex)
+        if camera_id in self._active_cameras:
+            self._active_cameras[camera_id]['active'] = True
+            self._condition.wakeAll()
+    
+    def stop_camera(self, camera_id: str):
+        """Arrête le flux d'une caméra."""
+        locker = QMutexLocker(self._mutex)
+        if camera_id in self._active_cameras:
+            self._active_cameras[camera_id]['active'] = False
+    
+    def run(self):
+        """Boucle principale du worker."""
+        self._running = True
         
-        # Ouverture de la source
-        if not self._open_camera():
-            self.error.emit(f"Impossible d'ouvrir la caméra {self.camera_id}")
-            return
-        
-        self.camera_connected.emit(self.camera_id)
-        self._start_time = cv2.getTickCount()
-        
-        # Boucle de capture
-        while not self._check_stop():
-            if self._check_pause():
+        while self._running:
+            locker = QMutexLocker(self._mutex)
+            # Nettoyer les caméras inactives
+            to_remove = []
+            for cam_id, cam_data in self._active_cameras.items():
+                if not cam_data['active']:
+                    to_remove.append(cam_id)
+            
+            for cam_id in to_remove:
+                del self._active_cameras[cam_id]
+            
+            # Si aucune caméra active, attendre
+            if not self._active_cameras:
+                self._condition.wait(self._mutex)
+                locker.unlock()
                 continue
+            locker.unlock()
             
-            # Lecture du frame
-            ret, frame = self._cap.read()
-            
-            if not ret:
-                self._logger.warning(f"Erreur lecture frame caméra {self.camera_id}")
-                # Tentative de reconnexion
-                if self._should_reconnect():
+            # Traiter les caméras actives
+            for cam_id, cam_data in list(self._active_cameras.items()):
+                if not cam_data['active']:
                     continue
-                else:
-                    break
+                
+                camera = cam_data['camera']
+                
+                # Simuler des frames vidéo (remplacer par vrai flux quand prêt)
+                frame = self._generate_simulated_frame(camera)
+                if frame:
+                    self.frameReady.emit((cam_id, frame))
+                    self.statusChanged.emit(cam_id, CameraStatus.ONLINE.value)
             
-            # Calcul FPS
-            self._frame_count += 1
-            if self._frame_count % 30 == 0:
-                current_time = cv2.getTickCount()
-                elapsed = (current_time - self._start_time) / cv2.getTickFrequency()
-                self._fps = self._frame_count / elapsed if elapsed > 0 else 0
-                self.fps_changed.emit(self._fps)
-            
-            # Émission du frame
-            self.frame_ready.emit(frame)
-            
-            # Petit délai pour éviter de surcharger le CPU
-            self.msleep(1)
-        
-        # Nettoyage
-        self._close_camera()
-        self.camera_disconnected.emit(self.camera_id)
-        self._logger.info(f"Arrêt capture caméra {self.camera_id}")
+            self.msleep(33)  # ~30 FPS
     
-    def _open_camera(self) -> bool:
-        """
-        Ouvre la source vidéo.
+    def _generate_simulated_frame(self, camera: Camera) -> Optional[QImage]:
+        """Génère une frame simulée pour le test."""
+        # Créer une image de test
+        width, height = 640, 480
+        image = QImage(width, height, QImage.Format.Format_RGB32)
         
-        Returns:
-            True si succès
-        """
-        try:
-            if self.source_type == "webcam":
-                # Webcam: convertir en entier
-                index = int(self.source) if self.source.isdigit() else 0
-                self._cap = cv2.VideoCapture(index)
-            elif self.source_type == "rtsp":
-                # RTSP: utiliser URL avec options
-                self._cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
-                self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Réduire buffer
-            elif self.source_type == "file":
-                # Fichier vidéo
-                self._cap = cv2.VideoCapture(self.source)
-            else:
-                self._logger.error(f"Type de source inconnu: {self.source_type}")
-                return False
-            
-            # Vérifier l'ouverture
-            if not self._cap.isOpened():
-                self._logger.error(f"Impossible d'ouvrir la source: {self.source}")
-                return False
-            
-            # Configuration
-            self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-            self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-            self._cap.set(cv2.CAP_PROP_FPS, 30)
-            
-            return True
-            
-        except Exception as e:
-            self._logger.error(f"Erreur ouverture caméra: {e}")
-            return False
-    
-    def _close_camera(self):
-        """Ferme la source vidéo."""
-        if self._cap is not None:
-            self._cap.release()
-            self._cap = None
-    
-    def _should_reconnect(self) -> bool:
-        """
-        Vérifie si une reconnexion est nécessaire.
+        # Remplir avec une couleur de base
+        color = random.randint(50, 100)
+        image.fill(color, color, color + 50)
         
-        Returns:
-            True si reconnexion tentée avec succès
-        """
-        self._logger.info("Tentative de reconnexion...")
-        self._close_camera()
-        self.msleep(1000)  # Attendre 1 seconde
+        # Ajouter du bruit pour simuler du mouvement
+        import random
+        for _ in range(100):
+            x = random.randint(0, width - 1)
+            y = random.randint(0, height - 1)
+            c = random.randint(150, 200)
+            image.setPixelColor(x, y, c)
         
-        if self._open_camera():
-            self._logger.info("Reconnexion réussie")
-            return True
-        
-        return False
-    
-    def get_resolution(self) -> Tuple[int, int]:
-        """
-        Retourne la résolution actuelle.
-        
-        Returns:
-            (width, height)
-        """
-        if self._cap is not None:
-            width = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            return (width, height)
-        return (0, 0)
-    
-    def get_fps(self) -> float:
-        """Retourne les FPS actuels."""
-        return self._fps
+        return image
     
     def stop(self):
-        """Arrête le worker et ferme la caméra."""
-        super().stop()
-        self._close_camera()
+        """Arrête le worker."""
+        self._running = False
+        locker = QMutexLocker(self._mutex)
+        self._active_cameras.clear()
+        self._condition.wakeAll()
+        self.wait()

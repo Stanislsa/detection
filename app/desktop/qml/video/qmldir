@@ -1,0 +1,6 @@
+VideoPlayer 1.0 VideoPlayer.qml
+CameraTile 1.0 CameraTile.qml
+DetectionOverlay 1.0 DetectionOverlay.qml
+BoundingBox 1.0 BoundingBox.qml
+PoseSkeleton 1.0 PoseSkeleton.qml
+VideoControls 1.0 VideoControls.qml

@@ -1,3 +1,5 @@
 """
-Package de l'application desktop Surveillance IA.
+Package principal de l'application desktop SentinelAI.
 """
+
+__version__ = "0.1.0"
