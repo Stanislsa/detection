@@ -9,6 +9,9 @@ Flickable {
     id: control
     
     property var theme
+    readonly property bool isNarrow: width < 960
+    readonly property bool isMobile: width < 720
+    readonly property int pageMargin: isMobile ? 10 : (isNarrow ? 14 : 24)
     property var notificationController
     
     contentWidth: parent.width

@@ -34,6 +34,9 @@ from app.desktop.navigation.router import Router
 from app.desktop.services.push_notification_service import PushNotificationService
 from app.desktop.services.telegram_service import TelegramService
 from app.desktop.controllers.telegram_controller import TelegramController
+from app.desktop.controllers.error_controller import ErrorController
+from app.desktop.controllers.i18n_controller import I18nController
+from app.desktop.controllers.theme_controller import ThemeController
 from app.desktop.services.android_permissions import AndroidPermissionHelper
 from app.desktop.models.notification_model import NotificationType, NotificationCategory
 
@@ -114,6 +117,9 @@ class Application(QApplication):
         self._telegram_service = TelegramService()
         self._telegram_controller = TelegramController(self._telegram_service)
         self._android_perms = AndroidPermissionHelper(self)
+        self._error_controller = ErrorController(self)
+        self._i18n = I18nController(self)
+        self._theme_prefs = ThemeController(self)
 
         # Bridge: alertes → notifications in-app + push OS
         self._alert_controller.alertReceived.connect(self._on_alert_received)
@@ -148,17 +154,20 @@ class Application(QApplication):
                 # id may not be available easily; emit empty or skip
                 pass
         except Exception as exc:
+            self._error_controller.report_exception_obj("Notification", exc)
             print(f"[Notify] in-app failed: {exc}")
 
         # OS push (tray / notify-send)
         try:
             self._push.push_from_alert(payload)
         except Exception as exc:
+            self._error_controller.report(f"Push notification failed: {exc}", "warning", "push")
             print(f"[Push] OS notification failed: {exc}")
 
         try:
             self._telegram_controller.notify_alert(payload)
         except Exception as exc:
+            self._error_controller.report(f"Telegram notify failed: {exc}", "warning", "telegram")
             print(f"[Telegram] notify failed: {exc}")
 
     def create_main_window(self):
@@ -181,6 +190,9 @@ class Application(QApplication):
         ctx.setContextProperty("PushService", self._push)
         ctx.setContextProperty("TelegramController", self._telegram_controller)
         ctx.setContextProperty("AndroidPermissions", self._android_perms)
+        ctx.setContextProperty("ErrorController", self._error_controller)
+        ctx.setContextProperty("I18n", self._i18n)
+        ctx.setContextProperty("ThemePrefs", self._theme_prefs)
         ctx.setContextProperty("AppPaths", self._paths)
 
         # Video image provider
@@ -196,11 +208,25 @@ class Application(QApplication):
         self._engine.load(QUrl.fromLocalFile(str(qml_file)))
 
         if not self._engine.rootObjects():
-            raise RuntimeError(
-                f"Failed to load QML: {qml_file}\n"
+            errs = []
+            try:
+                for e in self._engine.rootObjects():
+                    pass
+                # Collect warnings from last load if available
+            except Exception:
+                pass
+            msg = (
+                f"Failed to load QML: {qml_file}. "
                 "Check console for QML errors (missing imports, syntax)."
             )
+            self._error_controller.report(msg, "critical", "qml")
+            raise RuntimeError(msg)
 
     def exec(self) -> int:
-        self.create_main_window()
+        try:
+            self.create_main_window()
+        except Exception as exc:
+            self._error_controller.report_exception_obj("Startup", exc)
+            print(f"[FATAL] {exc}", file=sys.stderr)
+            raise
         return super().exec()

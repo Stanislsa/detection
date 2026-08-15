@@ -7,12 +7,27 @@ import "../../components"
 Item {
     id: control
     property var theme
+    readonly property bool isNarrow: width < 960
+    readonly property bool isMobile: width < 720
+    readonly property int pageMargin: isMobile ? 10 : (isNarrow ? 14 : 24)
     property var healthController
     property var serviceHealthController
 
-    ColumnLayout {
+    Flickable {
+        id: pageScroll
         anchors.fill: parent
-        anchors.margins: theme ? theme.spacingL : 24
+        contentWidth: width
+        contentHeight: pageCol.implicitHeight + 32
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+    ColumnLayout {
+        id: pageCol
+        width: pageScroll.width - (pageScroll.width < 900 ? 24 : 48)
+        x: pageScroll.width < 900 ? 12 : 24
+        // top margin
+
         spacing: theme ? theme.spacingM : 16
 
         RowLayout {
@@ -224,4 +239,5 @@ Item {
             }
         }
     }
+}
 }

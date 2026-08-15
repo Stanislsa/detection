@@ -64,5 +64,7 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except Exception as exc:
+        import traceback
         print(f"[FATAL] {exc}", file=sys.stderr)
-        raise
+        traceback.print_exc()
+        raise SystemExit(1)

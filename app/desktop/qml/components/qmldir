@@ -22,3 +22,5 @@ SliderRange 1.0 SliderRange.qml
 SplitPane 1.0 SplitPane.qml
 TabBar 1.0 TabBar.qml
 ToastStack 1.0 ToastStack.qml
+ErrorBanner 1.0 ErrorBanner.qml
+ResponsivePage 1.0 ResponsivePage.qml

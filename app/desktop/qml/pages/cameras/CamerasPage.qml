@@ -12,6 +12,10 @@ Item {
 
     property string viewMode: "grid"  // grid | list
     property string locFilter: "All"
+    readonly property bool isNarrow: width < 960
+    readonly property bool isMobile: width < 720
+    readonly property int pageMargin: isMobile ? 10 : (isNarrow ? 14 : 24)
+    readonly property int camCols: width >= 1200 ? 3 : (width >= 800 ? 2 : 1)
 
     readonly property var cameras: [
         { name: "MAIN LOBBY ENTRY", loc: "Building A - North", res: "4K", rec: true, live: true, offline: false },
@@ -22,9 +26,21 @@ Item {
         { name: "OFFICE CORRIDOR 4C", loc: "Building C - Floor 4", res: "1080P", rec: true, live: true, offline: false }
     ]
 
-    ColumnLayout {
+    Flickable {
+        id: pageScroll
         anchors.fill: parent
-        anchors.margins: theme ? theme.spacingL : 24
+        contentWidth: width
+        contentHeight: pageCol.implicitHeight + 32
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+    ColumnLayout {
+        id: pageCol
+        width: pageScroll.width - (pageScroll.width < 900 ? 24 : 48)
+        x: pageScroll.width < 900 ? 12 : 24
+        // top margin
+
         spacing: theme ? theme.spacingM : 16
 
         RowLayout {
@@ -110,12 +126,53 @@ Item {
                         }
                     }
 
-                    Text { text: "STATUS"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }
+                    Text {
+                        text: "STATUS"
+                        font.pixelSize: 10
+                        font.family: theme ? theme.fontFamilyMono : "monospace"
+                        color: theme ? theme.textMuted : "#64748B"
+                    }
                     Column {
                         spacing: 6
-                        Row { spacing: 6; Rectangle { width: 8; height: 8; radius: 4; color: theme ? theme.success : "#10B981"; anchors.verticalCenter: parent.verticalCenter }; Text { text: "Operational  32"; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" } }
-                        Row { spacing: 6; Rectangle { width: 8; height: 8; radius: 4; color: theme ? theme.critical : "#EF4444"; anchors.verticalCenter: parent.verticalCenter }; Text { text: "Alert Triggered  2"; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" } }
-                        Row { spacing: 6; Rectangle { width: 8; height: 8; radius: 4; color: theme ? theme.textMuted : "#64748B"; anchors.verticalCenter: parent.verticalCenter }; Text { text: "Offline  5"; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" } }
+                        Row {
+                            spacing: 6
+                            Rectangle {
+                                width: 8; height: 8; radius: 4
+                                color: theme ? theme.success : "#10B981"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "Operational  32"
+                                font.pixelSize: 12
+                                color: theme ? theme.textSecondary : "#94A3B8"
+                            }
+                        }
+                        Row {
+                            spacing: 6
+                            Rectangle {
+                                width: 8; height: 8; radius: 4
+                                color: theme ? theme.critical : "#EF4444"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "Alert Triggered  2"
+                                font.pixelSize: 12
+                                color: theme ? theme.textSecondary : "#94A3B8"
+                            }
+                        }
+                        Row {
+                            spacing: 6
+                            Rectangle {
+                                width: 8; height: 8; radius: 4
+                                color: theme ? theme.textMuted : "#64748B"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "Offline  5"
+                                font.pixelSize: 12
+                                color: theme ? theme.textSecondary : "#94A3B8"
+                            }
+                        }
                     }
 
                     Item { height: 20; width: 1 }
@@ -203,7 +260,7 @@ Item {
                     Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 140
                     radius: 4; color: "transparent"
                     border.color: theme ? theme.borderStrong : "#334155"; border.width: 1
-                    border.style: Qt.DashLine // may not work on all; visual ok
+                    
                     Column {
                         anchors.centerIn: parent; spacing: 8
                         AppIcon { anchors.horizontalCenter: parent.horizontalCenter; width: 28; height: 28; iconName: "plus"; iconColor: theme ? theme.textMuted : "#64748B" }
@@ -228,4 +285,5 @@ Item {
         id: addCamDialog
         theme: control.theme
     }
+}
 }

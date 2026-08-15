@@ -14,6 +14,9 @@ Item {
     property var sevFilters: ({ Critical: true, Warning: true, Information: true })
     property string searchText: ""
     property real minConfidence: 0.75
+    readonly property bool isNarrow: width < 960
+    readonly property bool isMobile: width < 720
+    readonly property int pageMargin: isMobile ? 10 : (isNarrow ? 14 : 24)
 
     readonly property var allEvents: [
         { time: "14:22:31", sev: "Critical", title: "Restricted Area Intrusion", cat: "PERSONNEL", conf: 98.4, desc: "Human detected in Zone B-4 (Vault Perimeter) during", cam: "CAM-VLT-02", node: "Processing Node Alpha-1" },
@@ -33,9 +36,21 @@ Item {
         return theme ? theme.info : "#06B6D4"
     }
 
-    ColumnLayout {
+    Flickable {
+        id: pageScroll
         anchors.fill: parent
-        anchors.margins: theme ? theme.spacingL : 24
+        contentWidth: width
+        contentHeight: pageCol.implicitHeight + 32
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+    ColumnLayout {
+        id: pageCol
+        width: pageScroll.width - (pageScroll.width < 900 ? 24 : 48)
+        x: pageScroll.width < 900 ? 12 : 24
+        // top margin
+
         spacing: theme ? theme.spacingM : 16
 
         RowLayout {
@@ -235,4 +250,5 @@ Item {
             }
         }
     }
+}
 }

@@ -213,6 +213,9 @@ database/*.db
 database/*.sqlite
 database/*.sqlite3
 
+# Data 
+donne/
+
 # Generated outputs
 output/
 outputs/

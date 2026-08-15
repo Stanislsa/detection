@@ -106,7 +106,7 @@ Rectangle {
 
                 SidebarItem {
                     width: parent.width
-                    title: "Dashboard"
+                    title: (typeof I18n !== "undefined" && I18n) ? I18n.navDashboard : "Dashboard"
                     glyph: control.icons ? control.icons.dashboard : "▣"
                     active: control.currentPage === "dashboard"
                     theme: control.theme
@@ -115,7 +115,7 @@ Rectangle {
                 }
                 SidebarItem {
                     width: parent.width
-                    title: "Cameras"
+                    title: (typeof I18n !== "undefined" && I18n) ? I18n.navCameras : "Cameras"
                     glyph: control.icons ? control.icons.cameras : "□"
                     active: control.currentPage === "cameras"
                     theme: control.theme
@@ -124,7 +124,7 @@ Rectangle {
                 }
                 SidebarItem {
                     width: parent.width
-                    title: "Alerts"
+                    title: (typeof I18n !== "undefined" && I18n) ? I18n.navAlerts : "Alerts"
                     glyph: control.icons ? control.icons.alerts : "⚠"
                     active: control.currentPage === "alerts" || control.currentPage === "incidents"
                     theme: control.theme
@@ -133,7 +133,7 @@ Rectangle {
                 }
                 SidebarItem {
                     width: parent.width
-                    title: "Events"
+                    title: (typeof I18n !== "undefined" && I18n) ? I18n.navEvents : "Events"
                     glyph: control.icons ? control.icons.events : "⧉"
                     active: control.currentPage === "events"
                     theme: control.theme
@@ -142,7 +142,7 @@ Rectangle {
                 }
                 SidebarItem {
                     width: parent.width
-                    title: "Users"
+                    title: (typeof I18n !== "undefined" && I18n) ? I18n.navUsers : "Users"
                     glyph: control.icons ? control.icons.users : "☰"
                     active: control.currentPage === "users"
                     theme: control.theme
@@ -151,7 +151,7 @@ Rectangle {
                 }
                 SidebarItem {
                     width: parent.width
-                    title: "AI Training"
+                    title: (typeof I18n !== "undefined" && I18n) ? I18n.navAiTraining : "AI Training"
                     glyph: control.icons ? control.icons.aiTraining : "⚙"
                     active: control.currentPage === "ai_training"
                     theme: control.theme
@@ -160,7 +160,7 @@ Rectangle {
                 }
                 SidebarItem {
                     width: parent.width
-                    title: "Observability"
+                    title: (typeof I18n !== "undefined" && I18n) ? I18n.navObservability : "Observability"
                     glyph: control.icons ? control.icons.observability : "⁂"
                     active: control.currentPage === "observability"
                     theme: control.theme
@@ -169,7 +169,7 @@ Rectangle {
                 }
                 SidebarItem {
                     width: parent.width
-                    title: "System Health"
+                    title: (typeof I18n !== "undefined" && I18n) ? I18n.navSystemHealth : "System Health"
                     glyph: control.icons ? control.icons.systemHealth : "♥"
                     active: control.currentPage === "system_health" || control.currentPage === "health"
                     theme: control.theme
@@ -178,7 +178,7 @@ Rectangle {
                 }
                 SidebarItem {
                     width: parent.width
-                    title: "Settings"
+                    title: (typeof I18n !== "undefined" && I18n) ? I18n.navSettings : "Settings"
                     glyph: control.icons ? control.icons.settings : "☸"
                     active: control.currentPage === "settings"
                     theme: control.theme

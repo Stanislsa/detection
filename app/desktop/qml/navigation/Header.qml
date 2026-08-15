@@ -13,6 +13,8 @@ Rectangle {
     property string searchQuery: ""
     property int unreadCount: 0
     property bool isDark: true
+    property bool compactMode: width < 900
+    property bool tinyMode: width < 640
 
     signal searchSubmitted(string query)
     signal breadcrumbClicked(int index)
@@ -20,7 +22,7 @@ Rectangle {
     signal themeToggleRequested()
     signal menuToggleRequested()
 
-    implicitHeight: theme.headerHeight
+    implicitHeight: control.tinyMode ? 48 : (theme ? theme.headerHeight : 56)
     color: theme.surface
 
     Behavior on color {
@@ -50,27 +52,31 @@ Rectangle {
             onClicked: control.menuToggleRequested()
         }
 
-        // Breadcrumb
+        // Breadcrumb (hide when narrow to free space)
         Breadcrumb {
+            visible: !control.tinyMode
             Layout.fillWidth: false
-            Layout.maximumWidth: 280
+            Layout.maximumWidth: control.compactMode ? 160 : 280
             theme: control.theme
             items: control.crumbs
-            onItemClicked: (index) => control.breadcrumbClicked(index)
+            onItemClicked: function(index) { control.breadcrumbClicked(index) }
         }
 
         Item { Layout.fillWidth: true }
 
-        // Global search
+        // Global search (hidden on very small widths)
         Item {
-            Layout.preferredWidth: Math.min(360, parent.width * 0.28)
+            visible: !control.tinyMode
+            Layout.preferredWidth: control.compactMode
+                                   ? Math.min(200, parent.width * 0.22)
+                                   : Math.min(360, parent.width * 0.28)
             Layout.preferredHeight: theme.buttonHeight
-            Layout.minimumWidth: 160
+            Layout.minimumWidth: control.compactMode ? 120 : 160
 
             AppInput {
                 anchors.fill: parent
                 theme: control.theme
-                placeholderText: "Search alerts, cameras, logs…"
+                placeholderText: (typeof I18n !== "undefined" && I18n) ? I18n.searchPlaceholder : "Search…"
                 leadingIcon: "search"
                 mono: false
                 onAccepted: control.searchSubmitted(text)
@@ -84,7 +90,9 @@ Rectangle {
             iconName: control.isDark ? "sun" : "moon"
             theme: control.theme
             ToolTip.visible: hovered
-            ToolTip.text: control.isDark ? "Switch to Light mode" : "Switch to Dark mode"
+            ToolTip.text: (typeof I18n !== "undefined" && I18n)
+                ? (control.isDark ? I18n.t("header.theme_light") : I18n.t("header.theme_dark"))
+                : (control.isDark ? "Light" : "Dark")
             onClicked: control.themeToggleRequested()
         }
 

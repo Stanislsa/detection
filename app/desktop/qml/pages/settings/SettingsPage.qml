@@ -13,39 +13,80 @@ Item {
 
     readonly property var tabs: ["General", "Camera", "AI Engine", "Storage", "Security", "Alerts", "Telegram", "Appearance"]
 
+    readonly property bool narrow: width < 900
+
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: theme ? theme.spacingL : 24
+        anchors.margins: control.narrow ? 12 : (theme ? theme.spacingL : 24)
         spacing: theme ? theme.spacingM : 16
 
         Column {
+            Layout.fillWidth: true
             spacing: 4
-            Text { text: "SYSTEM CONFIGURATION"; font.pixelSize: theme ? theme.fontSizeXXL : 20; font.weight: Font.Bold; color: theme ? theme.textPrimary : "#E5E7EB" }
-            Text { text: "Manage enterprise security policies, hardware acceleration, and data retention parameters."; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" }
+            Text {
+                text: "SYSTEM CONFIGURATION"
+                font.pixelSize: control.narrow ? 16 : (theme ? theme.fontSizeXXL : 20)
+                font.weight: Font.Bold
+                color: theme ? theme.textPrimary : "#E5E7EB"
+            }
+            Text {
+                width: parent.width
+                text: "Manage enterprise security policies, hardware acceleration, and data retention parameters."
+                font.pixelSize: 12
+                color: theme ? theme.textSecondary : "#94A3B8"
+                wrapMode: Text.WordWrap
+                visible: !control.narrow || parent.width > 400
+            }
         }
 
-        // Tabs
+        // Tabs — horizontal scroll when overflow
         Rectangle {
-            Layout.fillWidth: true; height: 40
-            radius: 4; color: theme ? theme.surface : "#151C28"
-            border.color: theme ? theme.border : "#1E293B"; border.width: 1
+            Layout.fillWidth: true
+            Layout.preferredHeight: 40
+            radius: 4
+            color: theme ? theme.surface : "#151C28"
+            border.color: theme ? theme.border : "#1E293B"
+            border.width: 1
+            clip: true
 
-            Row {
-                anchors.fill: parent; anchors.margins: 4; spacing: 4
-                Repeater {
-                    model: control.tabs
-                    Rectangle {
-                        width: tabLab.implicitWidth + 24; height: parent.height
-                        radius: 4
-                        color: control.activeTab === modelData ? (theme ? theme.primary : "#2563EB") : "transparent"
-                        Text {
-                            id: tabLab; anchors.centerIn: parent; text: modelData
-                            font.pixelSize: 12; font.weight: control.activeTab === modelData ? Font.DemiBold : Font.Normal
-                            color: control.activeTab === modelData ? "#FFF" : (theme ? theme.textSecondary : "#94A3B8")
-                        }
-                        MouseArea {
-                            anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                            onClicked: control.activeTab = modelData
+            Flickable {
+                id: tabsFlick
+                anchors.fill: parent
+                anchors.margins: 4
+                contentWidth: tabsRow.implicitWidth
+                contentHeight: height
+                flickableDirection: Flickable.HorizontalFlick
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                ScrollBar.horizontal: ScrollBar {
+                    policy: tabsFlick.contentWidth > tabsFlick.width
+                            ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                }
+
+                Row {
+                    id: tabsRow
+                    height: parent.height
+                    spacing: 4
+                    Repeater {
+                        model: control.tabs
+                        Rectangle {
+                            width: tabLab.implicitWidth + 24
+                            height: parent.height
+                            radius: 4
+                            color: control.activeTab === modelData ? (theme ? theme.primary : "#2563EB") : "transparent"
+                            Text {
+                                id: tabLab
+                                anchors.centerIn: parent
+                                text: modelData
+                                font.pixelSize: 12
+                                font.weight: control.activeTab === modelData ? Font.DemiBold : Font.Normal
+                                color: control.activeTab === modelData ? "#FFF" : (theme ? theme.textSecondary : "#94A3B8")
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: control.activeTab = modelData
+                            }
                         }
                     }
                 }
@@ -149,8 +190,38 @@ Item {
                             width: parent.width; spacing: 16
                             visible: control.activeTab === "Appearance"
 
-                            Text { text: "Theme Mode"; font.pixelSize: 14; font.weight: Font.DemiBold; color: theme ? theme.textPrimary : "#E5E7EB" }
-                            Text { text: "Choose between dark and light interface themes. Changes apply instantly."; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8"; width: parent.width; wrapMode: Text.WordWrap }
+                            Text {
+                                text: (typeof I18n !== "undefined" && I18n) ? I18n.t("lang.label") : "Language"
+                                font.pixelSize: 14; font.weight: Font.DemiBold; color: theme ? theme.textPrimary : "#E5E7EB"
+                            }
+                            Row {
+                                spacing: 10
+                                Repeater {
+                                    model: [
+                                        { code: "fr", label: "Français" },
+                                        { code: "en", label: "English" }
+                                    ]
+                                    Rectangle {
+                                        width: langLab.implicitWidth + 20; height: 32; radius: 4
+                                        color: (typeof I18n !== "undefined" && I18n && I18n.language === modelData.code)
+                                               ? (theme ? theme.primary : "#2563EB") : (theme ? theme.surfaceAlt : "#1B2433")
+                                        border.color: theme ? theme.border : "#1E293B"; border.width: 1
+                                        Text {
+                                            id: langLab; anchors.centerIn: parent; text: modelData.label
+                                            font.pixelSize: 12
+                                            color: (typeof I18n !== "undefined" && I18n && I18n.language === modelData.code)
+                                                   ? "#FFF" : (theme ? theme.textSecondary : "#94A3B8")
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                            onClicked: if (typeof I18n !== "undefined" && I18n) I18n.setLanguage(modelData.code)
+                                        }
+                                    }
+                                }
+                            }
+
+                            Text { text: (typeof I18n !== "undefined" && I18n) ? I18n.t("settings.theme") : "Theme Mode"; font.pixelSize: 14; font.weight: Font.DemiBold; color: theme ? theme.textPrimary : "#E5E7EB" }
+                            Text { text: (typeof I18n !== "undefined" && I18n) ? I18n.t("settings.theme_hint") : "Choose dark or light. Changes apply instantly."; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8"; width: parent.width; wrapMode: Text.WordWrap }
 
                             Row {
                                 spacing: 16
@@ -163,12 +234,21 @@ Item {
                                     Column {
                                         anchors.centerIn: parent; spacing: 8
                                         AppIcon { anchors.horizontalCenter: parent.horizontalCenter; width: 28; height: 28; iconName: "moon"; iconColor: "#94A3B8" }
-                                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Dark"; font.pixelSize: 13; font.weight: Font.DemiBold; color: "#E5E7EB" }
+                                        Text {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: (typeof I18n !== "undefined" && I18n) ? I18n.t("settings.theme_dark") : "Dark"
+                                            font.pixelSize: 13; font.weight: Font.DemiBold; color: "#E5E7EB"
+                                        }
                                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Default SOC mode"; font.pixelSize: 10; color: "#64748B" }
                                     }
                                     MouseArea {
-                                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                                        onClicked: if (theme) theme.setDark(true)
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (theme) theme.setDark(true)
+                                            if (typeof ThemePrefs !== "undefined" && ThemePrefs)
+                                                ThemePrefs.setDark(true)
+                                        }
                                     }
                                 }
                                 // Light card
@@ -180,12 +260,21 @@ Item {
                                     Column {
                                         anchors.centerIn: parent; spacing: 8
                                         AppIcon { anchors.horizontalCenter: parent.horizontalCenter; width: 28; height: 28; iconName: "sun"; iconColor: "#475569" }
-                                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Light"; font.pixelSize: 13; font.weight: Font.DemiBold; color: "#0F172A" }
+                                        Text {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: (typeof I18n !== "undefined" && I18n) ? I18n.t("settings.theme_light") : "Light"
+                                            font.pixelSize: 13; font.weight: Font.DemiBold; color: "#0F172A"
+                                        }
                                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Day operations"; font.pixelSize: 10; color: "#64748B" }
                                     }
                                     MouseArea {
-                                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                                        onClicked: if (theme) theme.setDark(false)
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (theme) theme.setDark(false)
+                                            if (typeof ThemePrefs !== "undefined" && ThemePrefs)
+                                                ThemePrefs.setDark(false)
+                                        }
                                     }
                                 }
                             }
@@ -219,9 +308,33 @@ Item {
                             width: parent.width; spacing: 12
                             visible: control.activeTab === "Security"
                             Text { text: "Security Policies"; font.pixelSize: 14; font.weight: Font.DemiBold; color: theme ? theme.textPrimary : "#E5E7EB" }
-                            Row { spacing: 12; Text { text: "Enforce MFA for all operators"; font.pixelSize: 13; color: theme ? theme.textPrimary : "#E5E7EB"; anchors.verticalCenter: parent.verticalCenter }; AppSwitch { theme: control.theme; checked: true } }
-                            Row { spacing: 12; Text { text: "Session timeout (30 min)"; font.pixelSize: 13; color: theme ? theme.textPrimary : "#E5E7EB"; anchors.verticalCenter: parent.verticalCenter }; AppSwitch { theme: control.theme; checked: true } }
-                            Row { spacing: 12; Text { text: "Audit log retention (90 days)"; font.pixelSize: 13; color: theme ? theme.textPrimary : "#E5E7EB"; anchors.verticalCenter: parent.verticalCenter }; AppSwitch { theme: control.theme; checked: true } }
+                            Row {
+                                width: parent.width
+                                Text {
+                                    text: "Enforce MFA for all operators"
+                                    font.pixelSize: 13
+                                    color: theme ? theme.textPrimary : "#E5E7EB"
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
+                            Row {
+                                width: parent.width
+                                Text {
+                                    text: "Session timeout (30 min)"
+                                    font.pixelSize: 13
+                                    color: theme ? theme.textPrimary : "#E5E7EB"
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
+                            Row {
+                                width: parent.width
+                                Text {
+                                    text: "Audit log retention (90 days)"
+                                    font.pixelSize: 13
+                                    color: theme ? theme.textPrimary : "#E5E7EB"
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
                         }
 
                         // ---- CAMERA / AI / STORAGE placeholders ----
@@ -236,7 +349,15 @@ Item {
                                 text: "Configure " + control.activeTab.toLowerCase() + " parameters for the SentinelAI node."
                                 font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8"
                             }
-                            Row { spacing: 12; Text { text: "Enable " + control.activeTab + " module"; font.pixelSize: 13; color: theme ? theme.textPrimary : "#E5E7EB"; anchors.verticalCenter: parent.verticalCenter }; AppSwitch { theme: control.theme; checked: true } }
+                            Row {
+                                width: parent.width
+                                Text {
+                                    text: "Enable " + control.activeTab + " module"
+                                    font.pixelSize: 13
+                                    color: theme ? theme.textPrimary : "#E5E7EB"
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
                         }
                     }
                 }
@@ -244,7 +365,8 @@ Item {
 
             // Right sidebar
             ColumnLayout {
-                Layout.preferredWidth: 260; Layout.fillHeight: true; spacing: 12
+                Layout.preferredWidth: 260; Layout.fillHeight: true; Layout.minimumWidth: 200; spacing: 12
+                visible: !control.narrow
 
                 Rectangle {
                     Layout.fillWidth: true; Layout.preferredHeight: 160
@@ -253,9 +375,51 @@ Item {
                     Column {
                         anchors.fill: parent; anchors.margins: 16; spacing: 8
                         Text { text: "SYSTEM HEALTH SUMMARY"; font.pixelSize: 11; font.family: theme ? theme.fontFamilyMono : "monospace"; font.weight: Font.Bold; color: theme ? theme.primary : "#2563EB" }
-                        Row { width: parent.width; Text { text: "Software Version"; width: parent.width - 90; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" }; Text { text: "v4.2.8-stable"; font.pixelSize: 12; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textPrimary : "#E5E7EB" } }
-                        Row { width: parent.width; Text { text: "Last Update"; width: parent.width - 110; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" }; Text { text: "2024-05-12"; font.pixelSize: 12; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textPrimary : "#E5E7EB" } }
-                        Row { width: parent.width; Text { text: "System Uptime"; width: parent.width - 110; font.pixelSize: 12; color: theme ? theme.textSecondary : "#94A3B8" }; Text { text: "142 days"; font.pixelSize: 12; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textPrimary : "#E5E7EB" } }
+                        Row {
+                            width: parent.width
+                            Text {
+                                text: "Software Version"
+                                width: parent.width - 90
+                                font.pixelSize: 12
+                                color: theme ? theme.textSecondary : "#94A3B8"
+                            }
+                            Text {
+                                text: "v4.2.8-stable"
+                                font.pixelSize: 12
+                                font.family: theme ? theme.fontFamilyMono : "monospace"
+                                color: theme ? theme.textPrimary : "#E5E7EB"
+                            }
+                        }
+                        Row {
+                            width: parent.width
+                            Text {
+                                text: "Last Update"
+                                width: parent.width - 110
+                                font.pixelSize: 12
+                                color: theme ? theme.textSecondary : "#94A3B8"
+                            }
+                            Text {
+                                text: "2024-05-12"
+                                font.pixelSize: 12
+                                font.family: theme ? theme.fontFamilyMono : "monospace"
+                                color: theme ? theme.textPrimary : "#E5E7EB"
+                            }
+                        }
+                        Row {
+                            width: parent.width
+                            Text {
+                                text: "System Uptime"
+                                width: parent.width - 110
+                                font.pixelSize: 12
+                                color: theme ? theme.textSecondary : "#94A3B8"
+                            }
+                            Text {
+                                text: "142 days"
+                                font.pixelSize: 12
+                                font.family: theme ? theme.fontFamilyMono : "monospace"
+                                color: theme ? theme.textPrimary : "#E5E7EB"
+                            }
+                        }
                         AppButton { width: parent.width; text: "Check for Updates"; variant: "secondary"; theme: control.theme }
                     }
                 }

@@ -8,6 +8,7 @@ Rectangle {
     id: control
     
     property var theme
+    readonly property bool isCompact: height < 700 || width < 640
     property var authController
     
     color: control.theme.background

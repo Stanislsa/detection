@@ -9,21 +9,26 @@ import "../../charts"
 Flickable {
     id: control
     property var theme
+    readonly property bool isNarrow: width < 960
+    readonly property bool isMobile: width < 720
+    readonly property int pageMargin: isMobile ? 10 : (isNarrow ? 14 : (theme ? theme.spacingL : 24))
+    readonly property int kpiCols: width >= 1100 ? 4 : (width >= 700 ? 2 : 1)
 
     contentWidth: width
-    contentHeight: contentColumn.implicitHeight + (theme ? theme.spacingXXL : 48)
+    contentHeight: contentColumn.y + contentColumn.implicitHeight + (control.pageMargin || 24)
     clip: true
     boundsBehavior: Flickable.StopAtBounds
     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
     Column {
         id: contentColumn
-        width: parent.width
-        spacing: theme ? theme.spacingL : 24
-        topPadding: theme ? theme.spacingL : 24
-        bottomPadding: theme ? theme.spacingXL : 32
-        leftPadding: theme ? theme.spacingL : 24
-        rightPadding: theme ? theme.spacingL : 24
+        width: control.width - control.pageMargin * 2
+        x: control.pageMargin
+        spacing: control.isMobile ? 12 : (theme ? theme.spacingL : 24)
+        topPadding: control.pageMargin
+        bottomPadding: control.pageMargin + 16
+        leftPadding: 0
+        rightPadding: 0
 
         GridLayout {
             width: parent.width - parent.leftPadding - parent.rightPadding

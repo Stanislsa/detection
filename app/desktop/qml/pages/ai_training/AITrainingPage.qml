@@ -7,6 +7,9 @@ import "../../components"
 Item {
     id: control
     property var theme
+    readonly property bool isNarrow: width < 960
+    readonly property bool isMobile: width < 720
+    readonly property int pageMargin: isMobile ? 10 : (isNarrow ? 14 : 24)
 
     ColumnLayout {
         anchors.fill: parent
@@ -53,9 +56,51 @@ Item {
                             Text { text: "84% (42/50)"; font.pixelSize: 11; color: theme ? theme.textPrimary : "#E5E7EB"; anchors.verticalCenter: parent.verticalCenter }
                         }
                     }
-                    Column { spacing: 2; Text { text: "ELAPSED TIME"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }; Text { text: "04:22:18"; font.pixelSize: 14; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textPrimary : "#E5E7EB" } }
-                    Column { spacing: 2; Text { text: "ESTIMATED FINISH"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }; Text { text: "~01:45:00"; font.pixelSize: 14; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textPrimary : "#E5E7EB" } }
-                    Column { spacing: 2; Text { text: "AVG STEP SPEED"; font.pixelSize: 10; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.textMuted : "#64748B" }; Text { text: "142ms/it"; font.pixelSize: 14; font.family: theme ? theme.fontFamilyMono : "monospace"; color: theme ? theme.success : "#10B981" } }
+                    Column {
+                        spacing: 2
+                        Text {
+                            text: "ELAPSED TIME"
+                            font.pixelSize: 10
+                            font.family: theme ? theme.fontFamilyMono : "monospace"
+                            color: theme ? theme.textMuted : "#64748B"
+                        }
+                        Text {
+                            text: "04:22:18"
+                            font.pixelSize: 14
+                            font.family: theme ? theme.fontFamilyMono : "monospace"
+                            color: theme ? theme.textPrimary : "#E5E7EB"
+                        }
+                    }
+                    Column {
+                        spacing: 2
+                        Text {
+                            text: "ESTIMATED FINISH"
+                            font.pixelSize: 10
+                            font.family: theme ? theme.fontFamilyMono : "monospace"
+                            color: theme ? theme.textMuted : "#64748B"
+                        }
+                        Text {
+                            text: "~01:45:00"
+                            font.pixelSize: 14
+                            font.family: theme ? theme.fontFamilyMono : "monospace"
+                            color: theme ? theme.textPrimary : "#E5E7EB"
+                        }
+                    }
+                    Column {
+                        spacing: 2
+                        Text {
+                            text: "AVG STEP SPEED"
+                            font.pixelSize: 10
+                            font.family: theme ? theme.fontFamilyMono : "monospace"
+                            color: theme ? theme.textMuted : "#64748B"
+                        }
+                        Text {
+                            text: "142ms/it"
+                            font.pixelSize: 14
+                            font.family: theme ? theme.fontFamilyMono : "monospace"
+                            color: theme ? theme.success : "#10B981"
+                        }
+                    }
                 }
             }
         }

@@ -20,7 +20,7 @@ class AlertController(QObject):
     alertAcknowledged = pyqtSignal(str)
     alertStatusChanged = pyqtSignal(str, str)
     # Nouvelle alerte temps réel (payload dict pour toast / badge)
-    alertReceived = pyqtSignal("QVariantMap")
+    alertReceived = pyqtSignal(object)
     configChanged = pyqtSignal()
     realtimeStateChanged = pyqtSignal()
     statsChanged = pyqtSignal()

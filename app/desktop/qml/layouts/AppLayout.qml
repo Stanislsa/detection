@@ -23,9 +23,13 @@ Rectangle {
     property int activeAnalysts: 4
     property int unreadNotifications: 3
 
-    // Responsive
+    // Responsive breakpoints
     property bool isNarrow: width < (theme ? theme.breakpointTablet : 1024)
+    property bool isMobile: width < (theme ? theme.breakpointMobile : 768)
+    property bool isCompact: height < 640 || isMobile
     property bool sidebarCollapsed: isNarrow
+    property bool footerVisible: !isCompact && height >= 560
+    property int contentHPadding: isMobile ? 12 : (isNarrow ? 16 : (theme ? theme.spacingL : 24))
 
     // ---- Transition state ----
     property string _previousPage: "dashboard"
@@ -69,10 +73,16 @@ Rectangle {
     }
 
     function navigateTo(page) {
-        if (page === currentPage || isTransitioning) return
+        if (!page || page === currentPage || isTransitioning) return
+        var src = getPageSource(page)
+        if (!src || src.length === 0) {
+            console.log("Unknown page id:", page)
+            if (typeof ErrorController !== "undefined" && ErrorController)
+                ErrorController.report("Unknown page: " + page, "warning", "navigation")
+            return
+        }
         transitionDirection = computeDirection(currentPage, page)
         _previousPage = currentPage
-        // Trigger transition before updating currentPage (so UI labels stay until mid-anim)
         startTransition(page)
         currentPage = page
         pageChanged(page)
@@ -124,15 +134,54 @@ Rectangle {
                         && enteringLoader.source.toString().indexOf(
                                source.split("/").pop()) >= 0
 
+        if (!source || source.length === 0) {
+            console.log("No QML source for page:", page)
+            isTransitioning = false
+            return
+        }
+
         if (alreadyReady) {
             doCrossfade()
         } else {
-            var handler = function() {
-                enteringLoader.loaded.disconnect(handler)
+            var finished = false
+            function finishOk() {
+                if (finished) return
+                finished = true
+                try { enteringLoader.loaded.disconnect(onLoaded) } catch (e) {}
+                try { enteringLoader.statusChanged.disconnect(onStatus) } catch (e2) {}
                 doCrossfade()
             }
-            enteringLoader.loaded.connect(handler)
+            function finishErr(msg) {
+                if (finished) return
+                finished = true
+                try { enteringLoader.loaded.disconnect(onLoaded) } catch (e) {}
+                try { enteringLoader.statusChanged.disconnect(onStatus) } catch (e2) {}
+                console.log("Failed to load page", page, ":", msg)
+                if (typeof ErrorController !== "undefined" && ErrorController) {
+                    ErrorController.reportPageLoadError(page)
+                    ErrorController.report(String(msg), "error", "loader")
+                }
+                if (typeof control.showToast === "function")
+                    control.showToast("Page failed to load: " + page, "danger", 5000)
+                // Still unlock navigation so other pages remain usable
+                isTransitioning = false
+                enteringWrapper.opacity = 1
+                enteringWrapper.x = 0
+                enteringWrapper.scale = 1
+            }
+            function onLoaded() { finishOk() }
+            function onStatus() {
+                if (enteringLoader.status === Loader.Error)
+                    finishErr(enteringLoader.sourceComponent ? "component error" : String(enteringLoader.source))
+            }
+            enteringLoader.loaded.connect(onLoaded)
+            enteringLoader.statusChanged.connect(onStatus)
             enteringLoader.source = source
+            // Safety unlock if neither signal fires
+            Qt.callLater(function() {
+                if (!finished && enteringLoader.status === Loader.Error)
+                    finishErr("late error")
+            })
         }
     }
 
@@ -188,15 +237,36 @@ Rectangle {
                 }
                 onSearchSubmitted: function(q) { console.log("search:", q) }
                 onNotificationClicked: control.navigateTo("notifications")
-                onThemeToggleRequested: control.theme.toggleTheme()
+                onThemeToggleRequested: {
+                    control.theme.toggleTheme()
+                    if (typeof ThemePrefs !== "undefined" && ThemePrefs)
+                        ThemePrefs.setDark(control.theme.isDark)
+                }
                 onMenuToggleRequested: control.sidebarCollapsed = !control.sidebarCollapsed
+            }
+
+            // Global error banner
+            ErrorBanner {
+                id: errorBanner
+                width: parent.width
+                theme: control.theme
+                active: typeof ErrorController !== "undefined" && ErrorController
+                        ? ErrorController.bannerVisible : false
+                message: typeof ErrorController !== "undefined" && ErrorController
+                         ? ErrorController.bannerMessage : ""
+                level: typeof ErrorController !== "undefined" && ErrorController
+                       ? ErrorController.bannerLevel : "error"
+                onDismissRequested: {
+                    if (typeof ErrorController !== "undefined" && ErrorController)
+                        ErrorController.dismissBanner()
+                }
             }
 
             // Content with dual loaders
             Rectangle {
                 id: contentArea
                 width: parent.width
-                height: parent.height - header.height - footerRow.height
+                height: parent.height - header.height - footerRow.height - errorBanner.height
                 color: control.theme.background
                 clip: true
 
@@ -338,7 +408,19 @@ Rectangle {
     }
 
     Connections {
+        target: typeof ErrorController !== "undefined" ? ErrorController : null
+        enabled: typeof ErrorController !== "undefined" && ErrorController !== null
+        function onErrorOccurred(id, level, message) {
+            if (level === "critical" || level === "error") {
+                if (typeof control.showToast === "function")
+                    control.showToast(message, level === "critical" ? "danger" : "warning", 4500)
+            }
+        }
+    }
+
+    Connections {
         target: typeof PushService !== "undefined" ? PushService : null
+        enabled: typeof PushService !== "undefined" && PushService !== null
         function onPermissionRequestNeeded() {
             if (!pushPermissionDialog.opened)
                 pushPermissionDialog.open()
@@ -356,22 +438,26 @@ Rectangle {
     // ---- Real-time alerts → toast + badge ----
     Connections {
         target: typeof AlertController !== "undefined" ? AlertController : null
+        enabled: typeof AlertController !== "undefined" && AlertController !== null
         function onAlertReceived(payload) {
+            if (!payload) return
             var cfg = AlertController.config || {}
-            if (!cfg.toast_enabled) return
-            var prio = payload.priority || "INFO"
+            if (cfg.toast_enabled === false) return
+            var prio = (payload.priority || payload.sev || "INFO") + ""
             if (cfg.toast_critical_only && prio !== "CRITICAL") return
             var type = "info"
             if (prio === "CRITICAL") type = "danger"
             else if (prio === "HIGH") type = "warning"
-            else if (prio === "MEDIUM") type = "info"
-            else type = "info"
-            var msg = (payload.title || "Alert") + " — " + (payload.location || payload.camera_name || "")
+            var loc = payload.location || payload.camera_name || payload.cam || ""
+            var msg = (payload.title || payload.detail || "Alert") + (loc ? (" — " + loc) : "")
             control.showToast(msg, type, prio === "CRITICAL" ? 8000 : 5000)
-            if (cfg.badge_enabled)
+            if (cfg.badge_enabled !== false)
                 control.unreadNotifications = AlertController.criticalOpenCount
         }
         function onStatsChanged() {
+            control.unreadNotifications = AlertController.criticalOpenCount
+        }
+        function onAlertsChanged() {
             control.unreadNotifications = AlertController.criticalOpenCount
         }
     }
@@ -391,6 +477,23 @@ Rectangle {
     signal pageChanged(string page)
 
     function formatPageTitle(page) {
+        if (typeof I18n !== "undefined" && I18n) {
+            var map = {
+                "dashboard": "nav.dashboard",
+                "cameras": "nav.cameras",
+                "alerts": "nav.alerts",
+                "incidents": "nav.incidents",
+                "events": "nav.events",
+                "users": "nav.users",
+                "ai_training": "nav.ai_training",
+                "observability": "nav.observability",
+                "system_health": "nav.system_health",
+                "health": "nav.system_health",
+                "settings": "nav.settings",
+                "notifications": "nav.notifications"
+            }
+            if (map[page]) return I18n.t(map[page])
+        }
         switch(page) {
             case "dashboard":      return "Dashboard"
             case "cameras":        return "Cameras"

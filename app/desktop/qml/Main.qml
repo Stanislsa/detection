@@ -10,9 +10,11 @@ ApplicationWindow {
     visible: true
     width: 1440
     height: 900
-    minimumWidth: 800
-    minimumHeight: 600
-    title: "SentinelAI — Secure Operations Gateway"
+    minimumWidth: 640
+    minimumHeight: 480
+    title: (typeof I18n !== "undefined" && I18n)
+           ? (I18n.t("app.name") + " — " + I18n.t("app.subtitle"))
+           : "SentinelAI"
     color: theme.background
 
     Behavior on color {
@@ -21,7 +23,22 @@ ApplicationWindow {
 
     ThemeManager {
         id: theme
-        isDark: true
+        isDark: (typeof ThemePrefs !== "undefined" && ThemePrefs)
+                ? ThemePrefs.isDark : true
+
+        Component.onCompleted: {
+            if (typeof ThemePrefs !== "undefined" && ThemePrefs)
+                setDark(ThemePrefs.isDark)
+        }
+    }
+
+    Connections {
+        target: typeof ThemePrefs !== "undefined" ? ThemePrefs : null
+        enabled: typeof ThemePrefs !== "undefined" && ThemePrefs !== null
+        function onIsDarkChanged() {
+            if (ThemePrefs)
+                theme.setDark(ThemePrefs.isDark)
+        }
     }
 
     // Authentication state
@@ -103,7 +120,8 @@ ApplicationWindow {
     }
 
     Connections {
-        target: AuthController
+        target: typeof AuthController !== "undefined" ? AuthController : null
+        enabled: typeof AuthController !== "undefined" && AuthController !== null
         function onTwoFactorRequired() {
             authState = "two_factor"
         }
@@ -132,6 +150,10 @@ ApplicationWindow {
     // Global keyboard shortcut for theme toggle (Ctrl+Shift+T)
     Shortcut {
         sequence: "Ctrl+Shift+T"
-        onActivated: theme.toggleTheme()
+        onActivated: {
+            theme.toggleTheme()
+            if (typeof ThemePrefs !== "undefined" && ThemePrefs)
+                ThemePrefs.setDark(theme.isDark)
+        }
     }
 }

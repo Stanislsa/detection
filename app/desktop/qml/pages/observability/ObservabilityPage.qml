@@ -8,10 +8,25 @@ import "../../charts"
 Item {
     id: control
     property var theme
+    readonly property bool isNarrow: width < 960
+    readonly property bool isMobile: width < 720
+    readonly property int pageMargin: isMobile ? 10 : (isNarrow ? 14 : 24)
+
+    Flickable {
+        id: pageScroll
+        anchors.fill: parent
+        contentWidth: width
+        contentHeight: pageCol.implicitHeight + 32
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
     ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: theme ? theme.spacingL : 24
+        id: pageCol
+        width: pageScroll.width - (pageScroll.width < 900 ? 24 : 48)
+        x: pageScroll.width < 900 ? 12 : 24
+        // top margin
+
         spacing: theme ? theme.spacingM : 16
 
         RowLayout {
@@ -94,9 +109,48 @@ Item {
                     }
                     Row {
                         spacing: 16
-                        Row { spacing: 4; Rectangle { width: 10; height: 3; color: "#2563EB"; anchors.verticalCenter: parent.verticalCenter }; Text { text: "CPU"; font.pixelSize: 10; color: theme ? theme.textMuted : "#64748B" } }
-                        Row { spacing: 4; Rectangle { width: 10; height: 3; color: "#F59E0B"; anchors.verticalCenter: parent.verticalCenter }; Text { text: "GPU"; font.pixelSize: 10; color: theme ? theme.textMuted : "#64748B" } }
-                        Row { spacing: 4; Rectangle { width: 10; height: 3; color: "#10B981"; anchors.verticalCenter: parent.verticalCenter }; Text { text: "RAM"; font.pixelSize: 10; color: theme ? theme.textMuted : "#64748B" } }
+                        Row {
+                            spacing: 6
+                            Rectangle {
+                                width: 10
+                                height: 3
+                                color: "#2563EB"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "CPU"
+                                font.pixelSize: 10
+                                color: theme ? theme.textMuted : "#64748B"
+                            }
+                        }
+                        Row {
+                            spacing: 6
+                            Rectangle {
+                                width: 10
+                                height: 3
+                                color: "#F59E0B"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "GPU"
+                                font.pixelSize: 10
+                                color: theme ? theme.textMuted : "#64748B"
+                            }
+                        }
+                        Row {
+                            spacing: 6
+                            Rectangle {
+                                width: 10
+                                height: 3
+                                color: "#10B981"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "RAM"
+                                font.pixelSize: 10
+                                color: theme ? theme.textMuted : "#64748B"
+                            }
+                        }
                     }
                 }
             }
@@ -197,4 +251,5 @@ Item {
             }
         }
     }
+}
 }

@@ -6,14 +6,6 @@ import "../components"
 
 /*
  * PushPermissionDialog — consentement notifications push OS.
- *
- * Usage:
- *   PushPermissionDialog {
- *       id: pushDialog
- *       theme: root.theme
- *       pushService: PushService
- *   }
- *   // pushDialog.open()
  */
 Popup {
     id: control
@@ -31,9 +23,8 @@ Popup {
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     width: Math.min(460, (parent ? parent.width : 460) - 32)
-    height: body.implicitHeight + 24
+    height: body.implicitHeight
 
-    // Center on Overlay
     parent: Overlay.overlay
     x: parent ? Math.round((parent.width - width) / 2) : 0
     y: parent ? Math.round((parent.height - height) / 2) : 0
@@ -41,7 +32,7 @@ Popup {
     enter: Transition {
         ParallelAnimation {
             NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 180; easing.type: Easing.OutCubic }
-            NumberAnimation { property: "scale"; from: 0.92; to: 1; duration: 220; easing.type: Easing.OutBack }
+            NumberAnimation { property: "scale"; from: 0.94; to: 1; duration: 220; easing.type: Easing.OutCubic }
         }
     }
     exit: Transition {
@@ -52,26 +43,23 @@ Popup {
     }
 
     background: Rectangle {
-        id: bg
-        radius: theme ? (theme.radiusL || 8) : 8
+        radius: 10
         color: theme ? theme.surfaceElevated : "#1E293B"
-        border.color: theme ? theme.border : "#1E293B"
+        border.color: theme ? theme.border : "#334155"
         border.width: 1
-
-        // Soft shadow via second rect (no GraphicalEffects dependency)
-        Rectangle {
-            z: -1
-            anchors.fill: parent
-            anchors.margins: -1
-            anchors.topMargin: 4
-            radius: parent.radius
-            color: "#00000055"
-        }
     }
 
     Overlay.modal: Rectangle {
         color: "#0B0E14CC"
-        Behavior on opacity { NumberAnimation { duration: 160 } }
+    }
+
+    function iconSource(name) {
+        if (typeof AppPaths !== "undefined" && AppPaths) {
+            var u = AppPaths.iconUrl(name)
+            if (u && u.length > 0)
+                return u
+        }
+        return Qt.resolvedUrl("../../assets/icons/" + name + ".svg")
     }
 
     ColumnLayout {
@@ -80,68 +68,82 @@ Popup {
         spacing: 0
 
         // ---- Header ----
-        Rectangle {
+        Item {
             Layout.fillWidth: true
-            Layout.preferredHeight: 56
-            color: theme ? theme.surface : "#151C28"
-            radius: theme ? (theme.radiusL || 8) : 8
-
-            // square bottom corners
-            Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                height: parent.radius
-                color: parent.color
-            }
+            Layout.preferredHeight: 60
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 16
-                anchors.rightMargin: 8
+                anchors.leftMargin: 18
+                anchors.rightMargin: 10
                 spacing: 12
 
                 Rectangle {
-                    width: 36
-                    height: 36
-                    radius: 18
+                    width: 40
+                    height: 40
+                    radius: 20
                     color: theme ? theme.primary : "#2563EB"
-                    AppIcon {
+
+                    Image {
                         anchors.centerIn: parent
-                        width: 18
-                        height: 18
-                        iconName: "bell"
-                        iconColor: "#FFFFFF"
+                        width: 20
+                        height: 20
+                        source: control.iconSource("bell")
+                        sourceSize.width: 40
+                        sourceSize.height: 40
+                        fillMode: Image.PreserveAspectFit
+                        // Tint white via layer if available; fallback visible as-is
+                        opacity: 0.95
                     }
                 }
 
                 Column {
                     Layout.fillWidth: true
-                    spacing: 1
+                    spacing: 2
                     Text {
-                        text: "Push notifications"
+                        text: (typeof I18n !== "undefined" && I18n) ? I18n.t("push.title") : "Push notifications"
                         font.family: theme ? theme.fontFamily : "Inter"
-                        font.pixelSize: theme ? theme.fontSizeL : 14
+                        font.pixelSize: 15
                         font.weight: Font.DemiBold
                         color: theme ? theme.textPrimary : "#E5E7EB"
                     }
                     Text {
-                        text: "Permission required"
-                        font.pixelSize: 11
+                        text: (typeof I18n !== "undefined" && I18n) ? I18n.t("push.permission_required") : "Permission required"
+                        font.pixelSize: 12
                         color: theme ? theme.textMuted : "#64748B"
                     }
                 }
 
-                AppIconButton {
+                Item {
                     Layout.preferredWidth: 32
                     Layout.preferredHeight: 32
-                    iconName: "x"
-                    theme: control.theme
-                    onClicked: {
-                        // Close without changing state (still unknown)
-                        control.close()
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 6
+                        color: closeMa.containsMouse ? (theme ? theme.surfaceAlt : "#1B2433") : "transparent"
+                    }
+                    Text {
+                        anchors.centerIn: parent
+                        text: "✕"
+                        font.pixelSize: 14
+                        color: theme ? theme.textSecondary : "#94A3B8"
+                    }
+                    MouseArea {
+                        id: closeMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: control.close()
                     }
                 }
+            }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: 1
+                color: theme ? theme.border : "#1E293B"
             }
         }
 
@@ -150,7 +152,7 @@ Popup {
             Layout.fillWidth: true
             Layout.leftMargin: 20
             Layout.rightMargin: 20
-            Layout.topMargin: 16
+            Layout.topMargin: 18
             Layout.bottomMargin: 8
             spacing: 14
 
@@ -171,13 +173,14 @@ Popup {
                 font.pixelSize: 13
                 color: theme ? theme.textSecondary : "#94A3B8"
                 wrapMode: Text.WordWrap
+                lineHeight: 1.25
             }
 
             // Info card
             Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: infoInner.implicitHeight + 24
-                radius: 6
+                radius: 8
                 color: theme ? theme.backgroundAlt : "#0F172A"
                 border.color: theme ? theme.border : "#1E293B"
                 border.width: 1
@@ -187,38 +190,80 @@ Popup {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.top: parent.top
-                    anchors.margins: 12
-                    spacing: 8
+                    anchors.margins: 14
+                    spacing: 10
 
                     Text {
                         text: "INCLUDED EVENTS"
                         font.pixelSize: 10
                         font.family: theme ? theme.fontFamilyMono : "monospace"
                         font.weight: Font.Bold
+                        font.letterSpacing: 0.6
                         color: theme ? theme.textMuted : "#64748B"
                     }
 
                     Repeater {
                         model: [
-                            { icon: "alert-triangle", label: "Intrusion & unauthorized access" },
-                            { icon: "camera", label: "Camera offline / signal loss" },
-                            { icon: "shield", label: "High-confidence AI detections" }
-                        ]
-                        Row {
-                            spacing: 8
-                            width: infoInner.width
-                            AppIcon {
-                                width: 14
-                                height: 14
-                                iconName: modelData.icon
-                                iconColor: theme ? theme.primary : "#2563EB"
-                                anchors.verticalCenter: parent.verticalCenter
+                            {
+                                icon: "alert-triangle",
+                                accent: "#EF4444",
+                                label: "Intrusion & unauthorized access"
+                            },
+                            {
+                                icon: "camera",
+                                accent: "#06B6D4",
+                                label: "Camera offline / signal loss"
+                            },
+                            {
+                                icon: "shield",
+                                accent: "#2563EB",
+                                label: "High-confidence AI detections"
                             }
+                        ]
+
+                        RowLayout {
+                            width: infoInner.width
+                            spacing: 10
+
+                            // Icon badge — never falls back to icon filename text
+                            Rectangle {
+                                width: 28
+                                height: 28
+                                radius: 6
+                                color: modelData.accent + "22"
+                                border.color: modelData.accent + "55"
+                                border.width: 1
+
+                                Image {
+                                    id: rowIcon
+                                    anchors.centerIn: parent
+                                    width: 14
+                                    height: 14
+                                    source: control.iconSource(modelData.icon)
+                                    sourceSize.width: 28
+                                    sourceSize.height: 28
+                                    fillMode: Image.PreserveAspectFit
+                                    visible: status !== Image.Error && status !== Image.Null
+                                }
+
+                                // Fallback glyph if SVG fails (no filename text)
+                                Text {
+                                    anchors.centerIn: parent
+                                    visible: rowIcon.status === Image.Error || rowIcon.status === Image.Null
+                                    text: modelData.icon === "alert-triangle" ? "⚠"
+                                          : modelData.icon === "camera" ? "◉"
+                                          : "◈"
+                                    font.pixelSize: 12
+                                    color: modelData.accent
+                                }
+                            }
+
                             Text {
+                                Layout.fillWidth: true
                                 text: modelData.label
-                                font.pixelSize: 12
+                                font.pixelSize: 13
                                 color: theme ? theme.textPrimary : "#E5E7EB"
-                                anchors.verticalCenter: parent.verticalCenter
+                                elide: Text.ElideRight
                             }
                         }
                     }
@@ -234,7 +279,7 @@ Popup {
                         text: pushService
                               ? ("Backend: " + pushService.platformHint)
                               : "Backend: system tray"
-                        font.pixelSize: 10
+                        font.pixelSize: 11
                         font.family: theme ? theme.fontFamilyMono : "monospace"
                         color: theme ? theme.textMuted : "#64748B"
                         wrapMode: Text.WordWrap
@@ -252,18 +297,16 @@ Popup {
         }
 
         // ---- Footer ----
-        Rectangle {
+        Item {
             Layout.fillWidth: true
-            Layout.preferredHeight: 64
-            color: theme ? theme.surface : "#151C28"
+            Layout.preferredHeight: 68
 
-            // square top
             Rectangle {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
-                height: 8
-                color: parent.color
+                height: 1
+                color: theme ? theme.border : "#1E293B"
             }
 
             RowLayout {
@@ -274,7 +317,7 @@ Popup {
 
                 AppButton {
                     Layout.fillWidth: true
-                    text: "Don't allow"
+                    text: (typeof I18n !== "undefined" && I18n) ? I18n.t("push.dont_allow") : "Don't allow"
                     variant: "secondary"
                     theme: control.theme
                     onClicked: {
@@ -287,7 +330,7 @@ Popup {
 
                 AppButton {
                     Layout.fillWidth: true
-                    text: "Allow notifications"
+                    text: (typeof I18n !== "undefined" && I18n) ? I18n.t("push.allow") : "Allow notifications"
                     variant: "primary"
                     theme: control.theme
                     onClicked: {
@@ -301,8 +344,5 @@ Popup {
         }
     }
 
-    onOpened: {
-        // Force layout height after open
-        control.height = body.implicitHeight
-    }
+    onOpened: control.height = body.implicitHeight
 }

@@ -10,6 +10,7 @@ import "../../components"
 Flickable {
     id: control
     property var theme
+    readonly property bool isNarrow: width < 700
     property var telegramController: typeof TelegramController !== "undefined" ? TelegramController : null
 
     contentWidth: width
@@ -32,7 +33,9 @@ Flickable {
     }
 
     Connections {
-        target: control.telegramController
+        target: typeof TelegramController !== "undefined" ? TelegramController : control.telegramController
+        enabled: (typeof TelegramController !== "undefined" && TelegramController)
+                 || (control.telegramController !== undefined && control.telegramController !== null)
         function onTestFinished(ok, message) {
             control.statusOk = ok
             control.statusMsg = message
@@ -45,6 +48,15 @@ Flickable {
             control.statusOk = ok
             control.statusMsg = message
         }
+        function onConfigChanged() {
+            // force UI refresh of bound fields if needed
+            control.statusMsg = control.statusMsg
+        }
+    }
+
+    Component.onCompleted: {
+        if (typeof TelegramController !== "undefined" && TelegramController)
+            control.telegramController = TelegramController
     }
 
     Column {
