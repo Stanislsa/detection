@@ -1,0 +1,49 @@
+# SentinelAI Backend - Unified Requirements
+# Python 3.10+
+
+# ─── WEB FRAMEWORK ───
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.11.3
+pydantic-settings==2.7.1
+
+# ─── DATABASE ───
+sqlalchemy==2.0.40
+alembic==1.14.1
+
+# ─── SECURITY ───
+cryptography==44.0.0
+argon2-cffi==23.1.0
+pyotp==2.9.0
+python-jose[cryptography]==3.4.0
+passlib[bcrypt]==1.7.4
+
+# ─── AI/ML ───
+ultralytics==8.3.0
+mediapipe==0.10.35
+openvino==2024.5.0
+torch==2.5.1
+torchvision==0.20.1
+opencv-python==4.11.0.86
+numpy==1.26.4
+
+# ─── NOTIFICATIONS ───
+python-telegram-bot==22.0
+aiosmtplib==4.0.0
+aiohttp==3.11.11
+
+# ─── UTILITIES ───
+python-dotenv==1.0.1
+pyyaml==6.0.2
+qrcode==8.0
+pillow==11.1.0
+
+# ─── LOGGING ───
+colorlog==6.9.0
+
+# ─── TESTING ───
+pytest==8.3.4
+pytest-asyncio==0.25.2
+pytest-cov==6.0.0
+httpx==0.28.1
