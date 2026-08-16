@@ -8,3 +8,19 @@ python run_app.py
 ```
 Backend: admin / admin123 · Offline: admin / azerty  
 API: /api/v1 · Metrics: /metrics · Docs: /api/docs
+
+## Lancement unique (recommandé)
+
+```bash
+pip install -r requirements.txt
+python start.py
+```
+
+Ordre : **1. Backend** → **2. Health check** → **3. Frontend**
+
+```bash
+python start.py --backend-only
+python start.py --frontend-only
+./start.sh
+python scripts/verify_connections.py
+```

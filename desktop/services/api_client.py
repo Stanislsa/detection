@@ -2,7 +2,16 @@ from __future__ import annotations
 import os
 from typing import Any, Optional
 import requests
-from PyQt6.QtCore import QObject, pyqtSignal
+try:
+    from PyQt6.QtCore import QObject, pyqtSignal
+except ImportError:
+    class QObject:
+        def __init__(self, parent=None): pass
+    def pyqtSignal(*_a, **_k):
+        class _Sig:
+            def connect(self, *_a, **_k): pass
+            def emit(self, *_a, **_k): pass
+        return _Sig()
 DEFAULT_BASE_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 class ApiError(Exception):
     def __init__(self, message, status_code=0, detail=None):
