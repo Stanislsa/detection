@@ -13,7 +13,7 @@ from backend.database.crud import (
     get_fall_event, get_fall_events, get_fall_events_by_person, get_fall_events_by_camera,
     create_fall_event, update_fall_event, confirm_fall_event
 )
-from backend.database.models import FallEvent
+from backend.database.models import FallEvent, User
 from backend.core.constants import GravityLevel, FallStatus
 
 router = APIRouter()
@@ -88,7 +88,7 @@ async def list_fall_events(
     is_false_positive: Optional[bool] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    current_user: FallEvent = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """List fall events with filters."""
@@ -105,7 +105,7 @@ async def get_person_fall_events(
     person_id: int,
     skip: int = 0,
     limit: int = 100,
-    current_user: FallEvent = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get fall events for a specific person."""
@@ -118,7 +118,7 @@ async def get_camera_fall_events(
     camera_id: int,
     skip: int = 0,
     limit: int = 100,
-    current_user: FallEvent = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get fall events for a specific camera."""
@@ -129,7 +129,7 @@ async def get_camera_fall_events(
 @router.get("/{fall_id}", response_model=FallEventResponse)
 async def get_fall_event_endpoint(
     fall_id: int,
-    current_user: FallEvent = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get fall event by ID."""
@@ -145,7 +145,7 @@ async def get_fall_event_endpoint(
 @router.post("/", response_model=FallEventResponse, status_code=status.HTTP_201_CREATED)
 async def create_fall_event_endpoint(
     fall_data: FallEventCreate,
-    current_user: FallEvent = Depends(require_permission("write_fall")),
+    current_user: User = Depends(require_permission("write_fall")),
     db: Session = Depends(get_db)
 ):
     """Create new fall event (typically called by detection system)."""
@@ -158,7 +158,7 @@ async def create_fall_event_endpoint(
 async def update_fall_event_endpoint(
     fall_id: int,
     fall_data: FallEventUpdate,
-    current_user: FallEvent = Depends(require_permission("write_fall")),
+    current_user: User = Depends(require_permission("write_fall")),
     db: Session = Depends(get_db)
 ):
     """Update fall event."""
@@ -178,7 +178,7 @@ async def confirm_fall_event_endpoint(
     fall_id: int,
     is_false_positive: bool = False,
     notes: Optional[str] = None,
-    current_user: FallEvent = Depends(require_permission("write_fall")),
+    current_user: User = Depends(require_permission("write_fall")),
     db: Session = Depends(get_db)
 ):
     """Confirm or reject a fall event."""
@@ -205,7 +205,7 @@ async def confirm_fall_event_endpoint(
 @router.delete("/{fall_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_fall_event_endpoint(
     fall_id: int,
-    current_user: FallEvent = Depends(require_permission("delete_fall")),
+    current_user: User = Depends(require_permission("delete_fall")),
     db: Session = Depends(get_db)
 ):
     """Delete fall event."""

@@ -140,7 +140,7 @@ La machine à états formalise le cycle de vie des caméras avec 8 états défin
 ### Création de la Machine à États
 
 ```python
-from app.desktop.camera_state_machine import CameraStateMachine, CameraEvent
+from desktop.camera_state_machine import CameraStateMachine, CameraEvent
 
 state_machine = CameraStateMachine(camera_id="camera_1")
 ```
@@ -238,7 +238,7 @@ transition = StateTransition(
 La machine à états est intégrée dans le CameraManager pour gérer le cycle de vie des caméras :
 
 ```python
-from app.desktop.camera_manager import get_camera_manager
+from desktop.camera_manager import get_camera_manager
 
 manager = get_camera_manager()
 

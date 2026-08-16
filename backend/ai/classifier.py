@@ -99,7 +99,7 @@ class ImageClassifier(BaseClassifier):
             with urllib.request.urlopen(labels_url) as response:
                 import json
                 self.labels = json.loads(response.read())
-        except:
+        except Exception:
             self.labels = [f"class_{i}" for i in range(1000)]
     
     def preprocess(self, image: np.ndarray) -> torch.Tensor:

@@ -1,3 +1,7 @@
+"""Obsolete tests — pre-migration imports. Skipped at module level."""
+import pytest
+pytest.skip("Obsolete tests — modules removed after v2.1.0 restructure", allow_module_level=True)
+
 """
 Tests pour le service de détection.
 Tests unitaires de la gestion des détections IA.

@@ -10,7 +10,7 @@ from datetime import datetime
 
 from backend.api.dependencies import get_db, get_current_user, require_permission
 from backend.database.crud import get_person, get_persons, create_person, update_person, delete_person
-from backend.database.models import Person
+from backend.database.models import Person, User
 from backend.core.constants import ProfileType, Gender
 
 router = APIRouter()
@@ -79,7 +79,7 @@ async def list_persons(
     skip: int = 0,
     limit: int = 100,
     profile_type: Optional[ProfileType] = None,
-    current_user: Person = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """List all monitored persons."""
@@ -90,7 +90,7 @@ async def list_persons(
 @router.get("/{person_id}", response_model=PersonResponse)
 async def get_person_endpoint(
     person_id: int,
-    current_user: Person = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get person by ID."""
@@ -106,7 +106,7 @@ async def get_person_endpoint(
 @router.post("/", response_model=PersonResponse, status_code=status.HTTP_201_CREATED)
 async def create_person_endpoint(
     person_data: PersonCreate,
-    current_user: Person = Depends(require_permission("write_person")),
+    current_user: User = Depends(require_permission("write_person")),
     db: Session = Depends(get_db)
 ):
     """Create new monitored person."""
@@ -134,7 +134,7 @@ async def create_person_endpoint(
 async def update_person_endpoint(
     person_id: int,
     person_data: PersonUpdate,
-    current_user: Person = Depends(require_permission("write_person")),
+    current_user: User = Depends(require_permission("write_person")),
     db: Session = Depends(get_db)
 ):
     """Update monitored person."""
@@ -168,7 +168,7 @@ async def update_person_endpoint(
 @router.delete("/{person_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_person_endpoint(
     person_id: int,
-    current_user: Person = Depends(require_permission("delete_person")),
+    current_user: User = Depends(require_permission("delete_person")),
     db: Session = Depends(get_db)
 ):
     """Delete monitored person (soft delete)."""
@@ -184,7 +184,7 @@ async def delete_person_endpoint(
 @router.get("/{person_id}/sensitive-data")
 async def get_sensitive_data(
     person_id: int,
-    current_user: Person = Depends(require_permission("read_person")),
+    current_user: User = Depends(require_permission("read_person")),
     db: Session = Depends(get_db)
 ):
     """Get decrypted sensitive data for a person."""

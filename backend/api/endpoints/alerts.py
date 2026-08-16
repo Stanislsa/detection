@@ -10,7 +10,7 @@ from datetime import datetime
 
 from backend.api.dependencies import get_db, get_current_user, require_permission
 from backend.database.crud import get_alert, get_alerts, get_alerts_by_fall_event, create_alert, update_alert_status
-from backend.database.models import Alert
+from backend.database.models import Alert, User
 from backend.core.constants import AlertStatus, AlertChannel
 
 router = APIRouter()
@@ -64,7 +64,7 @@ async def list_alerts(
     status: Optional[AlertStatus] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    current_user: Alert = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """List alerts with filters."""
@@ -78,7 +78,7 @@ async def list_alerts(
 @router.get("/fall/{fall_event_id}", response_model=List[AlertResponse])
 async def get_fall_event_alerts(
     fall_event_id: int,
-    current_user: Alert = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get all alerts for a specific fall event."""
@@ -89,7 +89,7 @@ async def get_fall_event_alerts(
 @router.get("/{alert_id}", response_model=AlertResponse)
 async def get_alert_endpoint(
     alert_id: int,
-    current_user: Alert = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get alert by ID."""
@@ -105,7 +105,7 @@ async def get_alert_endpoint(
 @router.post("/", response_model=AlertResponse, status_code=status.HTTP_201_CREATED)
 async def create_alert_endpoint(
     alert_data: AlertCreate,
-    current_user: Alert = Depends(require_permission("write_alert")),
+    current_user: User = Depends(require_permission("write_alert")),
     db: Session = Depends(get_db)
 ):
     """Create new alert (typically called by notification system)."""
@@ -120,7 +120,7 @@ async def update_alert_status_endpoint(
     status: AlertStatus,
     delivery_time_ms: Optional[int] = None,
     error_message: Optional[str] = None,
-    current_user: Alert = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Update alert status (typically called by notification system)."""
@@ -147,7 +147,7 @@ async def update_alert_status_endpoint(
 async def send_test_alert(
     channel: AlertChannel,
     recipient: str,
-    current_user: Alert = Depends(require_permission("write_alert")),
+    current_user: User = Depends(require_permission("write_alert")),
     db: Session = Depends(get_db)
 ):
     """Send a test alert for notification system verification."""

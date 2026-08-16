@@ -81,7 +81,7 @@ class BiomechanicsEngine:
         try:
             angle_change = angle_history[-1] - angle_history[-2]
             return angle_change / time_delta
-        except:
+        except Exception:
             return 0.0
     
     def calculate_center_of_mass(
@@ -185,7 +185,7 @@ class PhysicsEngine:
             # v = sqrt(2 * g * h)
             velocity = math.sqrt(2 * GRAVITY * height)
             return velocity
-        except:
+        except Exception:
             return 0.0
     
     def calculate_impact_force(
@@ -209,7 +209,7 @@ class PhysicsEngine:
             # F = m * (v / t)
             force = mass * (velocity / impact_time)
             return force
-        except:
+        except Exception:
             return 0.0
     
     def calculate_kinetic_energy(
@@ -231,7 +231,7 @@ class PhysicsEngine:
             # KE = 0.5 * m * v^2
             energy = 0.5 * mass * velocity ** 2
             return energy
-        except:
+        except Exception:
             return 0.0
     
     def calculate_deceleration(
@@ -255,7 +255,7 @@ class PhysicsEngine:
             # a = (v^2 - u^2) / (2 * s)
             deceleration = (final_velocity ** 2 - initial_velocity ** 2) / (2 * distance)
             return abs(deceleration)
-        except:
+        except Exception:
             return 0.0
     
     def analyze_fall_dynamics(

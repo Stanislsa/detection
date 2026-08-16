@@ -13,7 +13,7 @@ from backend.database.crud import (
     get_camera, get_cameras, get_active_cameras, 
     create_camera, update_camera, delete_camera, update_camera_last_seen
 )
-from backend.database.models import Camera
+from backend.database.models import Camera, User
 from backend.core.constants import CameraStatus
 
 router = APIRouter()
@@ -68,7 +68,7 @@ async def list_cameras(
     skip: int = 0,
     limit: int = 100,
     status: Optional[CameraStatus] = None,
-    current_user: Camera = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """List all cameras."""
@@ -78,7 +78,7 @@ async def list_cameras(
 
 @router.get("/active", response_model=List[CameraResponse])
 async def list_active_cameras(
-    current_user: Camera = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """List all active cameras."""
@@ -89,7 +89,7 @@ async def list_active_cameras(
 @router.get("/{camera_id}", response_model=CameraResponse)
 async def get_camera_endpoint(
     camera_id: int,
-    current_user: Camera = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get camera by ID."""
@@ -105,7 +105,7 @@ async def get_camera_endpoint(
 @router.post("/", response_model=CameraResponse, status_code=status.HTTP_201_CREATED)
 async def create_camera_endpoint(
     camera_data: CameraCreate,
-    current_user: Camera = Depends(require_permission("write_camera")),
+    current_user: User = Depends(require_permission("write_camera")),
     db: Session = Depends(get_db)
 ):
     """Create new camera."""
@@ -118,7 +118,7 @@ async def create_camera_endpoint(
 async def update_camera_endpoint(
     camera_id: int,
     camera_data: CameraUpdate,
-    current_user: Camera = Depends(require_permission("write_camera")),
+    current_user: User = Depends(require_permission("write_camera")),
     db: Session = Depends(get_db)
 ):
     """Update camera."""
@@ -136,7 +136,7 @@ async def update_camera_endpoint(
 @router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_camera_endpoint(
     camera_id: int,
-    current_user: Camera = Depends(require_permission("delete_camera")),
+    current_user: User = Depends(require_permission("delete_camera")),
     db: Session = Depends(get_db)
 ):
     """Delete camera (soft delete)."""
@@ -152,7 +152,7 @@ async def delete_camera_endpoint(
 @router.post("/{camera_id}/heartbeat")
 async def camera_heartbeat(
     camera_id: int,
-    current_user: Camera = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Update camera last_seen timestamp (heartbeat)."""

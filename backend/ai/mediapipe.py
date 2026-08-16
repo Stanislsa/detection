@@ -271,7 +271,7 @@ class MediaPipeFallDetector(MediaPipePoseDetector):
         try:
             trunk_angle = self._calculate_trunk_angle(landmarks)
             return trunk_angle > 60.0  # Threshold for horizontal
-        except:
+        except Exception:
             return False
     
     def _get_head_position(self, landmarks: List[Dict]) -> Dict[str, float]:
@@ -296,7 +296,7 @@ class MediaPipeFallDetector(MediaPipePoseDetector):
                 "y": nose["y"],
                 "below_shoulders": nose["y"] > shoulder_mid_y
             }
-        except:
+        except Exception:
             return {"x": 0.0, "y": 0.0, "below_shoulders": False}
     
     def _calculate_vertical_velocity(
