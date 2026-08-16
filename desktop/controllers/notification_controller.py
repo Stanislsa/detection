@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 
-from app.desktop.models.notification_model import Notification, NotificationType, NotificationCategory
-from app.desktop.services.notification_service import NotificationService
+from desktop.models.notification_model import Notification, NotificationType, NotificationCategory
+from desktop.services.notification_service import NotificationService
 
 
 class NotificationController(QObject):

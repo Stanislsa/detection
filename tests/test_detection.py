@@ -5,9 +5,9 @@ Tests unitaires de la gestion des détections IA.
 
 import pytest
 from unittest.mock import Mock, patch
-from app.desktop.services.detection_service import DetectionService
-from app.desktop.services.api_client import APIClient, APIResponse
-from app.desktop.models.alert import Alert, AlertSeverity, AlertStatus, AlertType
+from desktop.services.detection_service import DetectionService
+from desktop.services.api_client import APIClient, APIResponse
+from desktop.models.alert import Alert, AlertSeverity, AlertStatus, AlertType
 from datetime import datetime
 
 

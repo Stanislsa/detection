@@ -8,8 +8,8 @@ from datetime import datetime
 
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 
-from app.desktop.models.camera_model import Camera, CameraStatus, Detection, DetectionType
-from app.desktop.services.camera_service import CameraService
+from desktop.models.camera_model import Camera, CameraStatus, Detection, DetectionType
+from desktop.services.camera_service import CameraService
 
 
 class CameraController(QObject):

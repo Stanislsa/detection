@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 import importlib
 import inspect
 
-from app.core.logger import get_logger
+from backend.core.logger import get_logger
 
 
 class Plugin(ABC):

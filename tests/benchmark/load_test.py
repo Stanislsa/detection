@@ -14,9 +14,9 @@ import psutil
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from app.desktop.camera_manager import get_camera_manager
-from app.ai.yolo_detector import YOLODetector
-from app.desktop.observability import get_observability_service
+from desktop.camera_manager import get_camera_manager
+from ai.yolo_detector import YOLODetector
+from desktop.observability import get_observability_service
 
 
 @dataclass

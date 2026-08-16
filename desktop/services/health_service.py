@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from collections import deque
 import random
 
-from app.desktop.models.system_model import (
+from desktop.models.system_model import (
     SystemMetric, ComponentHealth, SystemOverview,
     HealthStatus, ComponentType
 )

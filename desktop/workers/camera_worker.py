@@ -9,8 +9,8 @@ from PyQt6.QtGui import QImage
 import time
 import random
 
-from app.desktop.models.camera_model import Camera, CameraStatus
-from app.desktop.services.camera_service import CameraService
+from desktop.models.camera_model import Camera, CameraStatus
+from desktop.services.camera_service import CameraService
 
 
 class CameraWorker(QThread):

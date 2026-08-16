@@ -8,8 +8,8 @@ from unittest.mock import Mock, patch
 from PyQt6.QtWidgets import QApplication
 import sys
 
-from app.desktop.auth.login_dialog import LoginDialog
-from app.desktop.services.api_client import APIClient, APIResponse
+from desktop.auth.login_dialog import LoginDialog
+from desktop.services.api_client import APIClient, APIResponse
 
 
 class TestLoginDialog:

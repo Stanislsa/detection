@@ -12,13 +12,13 @@ import numpy as np
 # Ajouter le répertoire parent au path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from app.desktop.pipeline.video_pipeline import VideoPipeline, PipelineConfig
-from app.desktop.pipeline.bounded_queue import FrameQueue
-from app.ai.yolo_detector import YOLODetector
-from app.ai.rules.intrusion import IntrusionRuleEngine
-from app.events.event_bus import get_event_bus
-from app.desktop.observability import get_observability_service
-from app.desktop.camera_manager import get_camera_manager
+from desktop.pipeline.video_pipeline import VideoPipeline, PipelineConfig
+from desktop.pipeline.bounded_queue import FrameQueue
+from ai.yolo_detector import YOLODetector
+from ai.rules.intrusion import IntrusionRuleEngine
+from events.event_bus import get_event_bus
+from desktop.observability import get_observability_service
+from desktop.camera_manager import get_camera_manager
 
 
 class PipelineIntegrationTest:
@@ -75,7 +75,7 @@ class PipelineIntegrationTest:
         camera_open_start = time.time()
         
         try:
-            from app.desktop.models.camera import Camera, CameraStatus
+            from desktop.models.camera import Camera, CameraStatus
             
             camera = Camera(
                 id=1,
@@ -152,7 +152,7 @@ class PipelineIntegrationTest:
         def on_alert_generated(event):
             self.metrics["alerts"] += 1
         
-        from app.events.event_types import EventType
+        from events.event_types import EventType
         self.event_bus.subscribe(EventType.FRAME_RECEIVED, on_frame_received)
         self.event_bus.subscribe(EventType.DETECTION_RESULT, on_detection_result)
         self.event_bus.subscribe(EventType.ALERT_GENERATED, on_alert_generated)
@@ -193,7 +193,7 @@ class PipelineIntegrationTest:
                         print(f"⚠ WARNING: Temps d'inférence > {self.performance_targets['inference_time_ms']}ms")
                     
                     # Publier le résultat
-                    from app.events.event_types import DetectionResultEvent
+                    from events.event_types import DetectionResultEvent
                     event = DetectionResultEvent(
                         camera_id="test_camera",
                         detections=detections,

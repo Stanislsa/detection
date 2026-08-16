@@ -11,7 +11,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.ai.training_service import get_training_service, TrainingConfig
+from ai.training_service import get_training_service, TrainingConfig
 
 def main():
     service = get_training_service()

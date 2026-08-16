@@ -11,7 +11,7 @@ from collections import deque
 from datetime import datetime
 import random
 
-from app.desktop.models.camera_model import Detection, DetectionType
+from desktop.models.camera_model import Detection, DetectionType
 
 
 class InferenceWorker(QThread):

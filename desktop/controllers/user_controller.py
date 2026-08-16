@@ -6,10 +6,10 @@ from typing import List, Optional, Dict, Any
 
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 
-from app.desktop.models.user_model import (
+from desktop.models.user_model import (
     User, UserRole, UserStatus, Permission
 )
-from app.desktop.services.user_service import UserService
+from desktop.services.user_service import UserService
 
 
 class UserController(QObject):

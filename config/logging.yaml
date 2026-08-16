@@ -28,7 +28,7 @@ logging:
     
   # Loggers spécifiques
   loggers:
-    app.desktop.workers:
+    desktop.workers:
       level: "DEBUG"
     app.ai:
       level: "INFO"

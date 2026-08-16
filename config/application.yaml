@@ -1,7 +1,7 @@
 # Configuration principale de l'application
 application:
   name: "SentinelAI"
-  version: "1.0.0"
+  version: "2.1.0"
   environment: "development"  # development, staging, production
   
   # Interface

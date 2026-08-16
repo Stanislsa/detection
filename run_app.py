@@ -33,13 +33,13 @@ os.environ.setdefault("QT_ENABLE_HIGHDPI_SCALING", "1")
 def main() -> int:
     from PyQt6.QtCore import Qt, QCoreApplication
     from PyQt6.QtGui import QFont, QIcon
-    from app.desktop.application import Application
+    from desktop.application import Application
 
     QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True)
 
     app = Application()
     app.setApplicationName("SentinelAI")
-    app.setApplicationVersion("4.2.1")
+    app.setApplicationVersion("2.1.0")
     app.setOrganizationName("Axyris Security")
     app.setOrganizationDomain("axyris.security")
 
@@ -50,11 +50,11 @@ def main() -> int:
     else:
         app.setFont(QFont("Inter", 10))
 
-    icon_path = ROOT / "app" / "desktop" / "assets" / "icons" / "shield.svg"
+    icon_path = ROOT / "desktop" / "assets" / "icons" / "shield.svg"
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
 
-    print(f"SentinelAI 4.2.1-stable  |  Python {sys.version.split()[0]}  |  {sys.platform}")
+    print(f"SentinelAI 2.1.0-stable  |  Python {sys.version.split()[0]}  |  {sys.platform}")
     print("Starting QML engine…")
 
     return app.exec()

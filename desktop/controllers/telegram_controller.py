@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtProperty, pyqtSlot
 
-from app.desktop.services.telegram_service import TelegramService
+from desktop.services.telegram_service import TelegramService
 
 
 class _Worker(QThread):

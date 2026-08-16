@@ -8,6 +8,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.requests import Request
+from starlette.responses import Response
 import uvicorn
 
 from backend.core.config import settings
@@ -131,14 +135,42 @@ def create_app() -> FastAPI:
     # Include API router
     app.include_router(api_router, prefix="/api/v1")
     
-    # Global exception handlers
+    try:
+        from backend.core.prometheus_metrics import PrometheusMiddleware, init_app_info, PROMETHEUS_AVAILABLE
+        app.add_middleware(PrometheusMiddleware)
+        init_app_info(settings.APP_NAME, settings.APP_VERSION, settings.ENVIRONMENT)
+        logger.info(f"Prometheus enabled={PROMETHEUS_AVAILABLE}")
+    except Exception as e:
+        logger.warning(f"Prometheus not loaded: {e}")
+    @app.get("/metrics")
+    async def root_metrics():
+        from backend.core.prometheus_metrics import metrics_response
+        resp=metrics_response()
+        return Response(content=resp.body, media_type=resp.media_type, status_code=resp.status_code)
+    from backend.core.exceptions import SentinelException
+    from backend.core.prometheus_metrics import record_error
+    @app.exception_handler(SentinelException)
+    async def sentinel_exception_handler(request: Request, exc: SentinelException):
+        record_error(exc.error_code, exc.status_code)
+        body=exc.to_dict(); body["path"]=str(request.url.path); body["method"]=request.method
+        return JSONResponse(status_code=exc.status_code, content=body)
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        code=f"HTTP_{exc.status_code}"; record_error(code, exc.status_code)
+        detail=exc.detail
+        message=detail.get("message", str(detail)) if isinstance(detail, dict) else str(detail)
+        return JSONResponse(status_code=exc.status_code, content={"error":{"code":code,"message":message},"path":str(request.url.path),"method":request.method})
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        record_error("VALIDATION_ERROR", 422)
+        errors=[{"loc":list(e.get("loc",[])),"msg":e.get("msg"),"type":e.get("type")} for e in exc.errors()]
+        return JSONResponse(status_code=422, content={"error":{"code":"VALIDATION_ERROR","message":"Request validation failed","details":errors},"path":str(request.url.path),"method":request.method})
     @app.exception_handler(Exception)
-    async def global_exception_handler(request, exc):
-        logger.error(f"Unhandled exception: {exc}", exc_info=True)
-        return JSONResponse(
-            status_code=500,
-            content={"detail": "Internal server error"}
-        )
+    async def global_exception_handler(request: Request, exc: Exception):
+        record_error("INTERNAL_ERROR", 500)
+        logger.error(f"Unhandled on {request.method} {request.url.path}: {exc}", exc_info=True)
+        message=str(exc) if settings.DEBUG else "Internal server error"
+        return JSONResponse(status_code=500, content={"error":{"code":"INTERNAL_ERROR","message":message},"path":str(request.url.path),"method":request.method})
     
     # Root endpoint
     @app.get("/")

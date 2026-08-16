@@ -8,8 +8,8 @@ from typing import Any, Dict, List
 
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal, pyqtProperty, pyqtSlot
 
-from app.desktop.services.alert_service import AlertService
-from app.desktop.models.alert_model import AlertStatus
+from desktop.services.alert_service import AlertService
+from desktop.models.alert_model import AlertStatus
 
 
 class AlertController(QObject):

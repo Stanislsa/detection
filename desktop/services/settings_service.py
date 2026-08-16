@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any
 import json
 import os
 
-from app.desktop.models.settings_model import (
+from desktop.models.settings_model import (
     SystemSettings, GeneralSettings, CameraSettings, AISettings,
     NotificationSettings, StorageSettings, SecuritySettings
 )

@@ -7,12 +7,12 @@ from datetime import datetime
 
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 
-from app.desktop.models.system_model import (
+from desktop.models.system_model import (
     SystemMetric, ComponentHealth, SystemOverview,
     HealthStatus, ComponentType
 )
-from app.desktop.services.health_service import HealthService
-from app.desktop.workers.monitoring_worker import MonitoringWorker
+from desktop.services.health_service import HealthService
+from desktop.workers.monitoring_worker import MonitoringWorker
 
 
 class HealthController(QObject):

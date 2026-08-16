@@ -6,11 +6,11 @@ from typing import List, Optional, Dict, Any
 
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 
-from app.desktop.models.service_health_model import (
+from desktop.models.service_health_model import (
     ServiceHealth, SystemHealthOverview,
     ServiceStatus, ServiceType
 )
-from app.desktop.services.service_health_service import ServiceHealthService
+from desktop.services.service_health_service import ServiceHealthService
 
 
 class ServiceHealthController(QObject):

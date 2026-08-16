@@ -6,7 +6,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import random
 
-from app.desktop.models.service_health_model import (
+from desktop.models.service_health_model import (
     ServiceHealth, SystemHealthOverview,
     ServiceStatus, ServiceType
 )

@@ -5,7 +5,7 @@ Tests unitaires des communications avec le backend FastAPI.
 
 import pytest
 from unittest.mock import Mock, patch
-from app.desktop.services.api_client import APIClient, APIResponse
+from desktop.services.api_client import APIClient, APIResponse
 
 
 class TestAPIClient:

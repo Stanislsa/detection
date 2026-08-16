@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import uuid
 import random
 
-from app.desktop.models.user_model import (
+from desktop.models.user_model import (
     User, UserRole, UserStatus, Permission, UserActivity
 )
 

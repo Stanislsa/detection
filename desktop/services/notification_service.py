@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import uuid
 import random
 
-from app.desktop.models.notification_model import Notification, NotificationType, NotificationCategory
+from desktop.models.notification_model import Notification, NotificationType, NotificationCategory
 
 
 class NotificationService:

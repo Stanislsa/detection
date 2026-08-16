@@ -13,32 +13,32 @@ from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtWidgets import QApplication
 
-from app.desktop.controllers.auth_controller import AuthController
-from app.desktop.controllers.alert_controller import AlertController
-from app.desktop.controllers.camera_controller import CameraController
-from app.desktop.controllers.video_pipeline_controller import VideoPipelineController
-from app.desktop.controllers.event_controller import EventController
-from app.desktop.controllers.notification_controller import NotificationController
-from app.desktop.controllers.health_controller import HealthController
-from app.desktop.controllers.settings_controller import SettingsController
-from app.desktop.controllers.service_health_controller import ServiceHealthController
-from app.desktop.controllers.user_controller import UserController
-from app.desktop.services.camera_service import CameraService
-from app.desktop.services.event_service import EventService
-from app.desktop.services.notification_service import NotificationService
-from app.desktop.services.health_service import HealthService
-from app.desktop.services.settings_service import SettingsService
-from app.desktop.services.service_health_service import ServiceHealthService
-from app.desktop.services.user_service import UserService
-from app.desktop.navigation.router import Router
-from app.desktop.services.push_notification_service import PushNotificationService
-from app.desktop.services.telegram_service import TelegramService
-from app.desktop.controllers.telegram_controller import TelegramController
-from app.desktop.controllers.error_controller import ErrorController
-from app.desktop.controllers.i18n_controller import I18nController
-from app.desktop.controllers.theme_controller import ThemeController
-from app.desktop.services.android_permissions import AndroidPermissionHelper
-from app.desktop.models.notification_model import NotificationType, NotificationCategory
+from desktop.controllers.auth_controller import AuthController
+from desktop.controllers.alert_controller import AlertController
+from desktop.controllers.camera_controller import CameraController
+from desktop.controllers.video_pipeline_controller import VideoPipelineController
+from desktop.controllers.event_controller import EventController
+from desktop.controllers.notification_controller import NotificationController
+from desktop.controllers.health_controller import HealthController
+from desktop.controllers.settings_controller import SettingsController
+from desktop.controllers.service_health_controller import ServiceHealthController
+from desktop.controllers.user_controller import UserController
+from desktop.services.camera_service import CameraService
+from desktop.services.event_service import EventService
+from desktop.services.notification_service import NotificationService
+from desktop.services.health_service import HealthService
+from desktop.services.settings_service import SettingsService
+from desktop.services.service_health_service import ServiceHealthService
+from desktop.services.user_service import UserService
+from desktop.navigation.router import Router
+from desktop.services.push_notification_service import PushNotificationService
+from desktop.services.telegram_service import TelegramService
+from desktop.controllers.telegram_controller import TelegramController
+from desktop.controllers.error_controller import ErrorController
+from desktop.controllers.i18n_controller import I18nController
+from desktop.controllers.theme_controller import ThemeController
+from desktop.services.android_permissions import AndroidPermissionHelper
+from desktop.models.notification_model import NotificationType, NotificationCategory
 
 # Force Basic style before any Qt Quick Controls instantiation
 os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Basic")

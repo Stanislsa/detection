@@ -17,7 +17,7 @@ from PyQt6.QtCore import QObject, QSettings, pyqtSignal, pyqtProperty, pyqtSlot
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
 
-from app.desktop.services.android_permissions import (
+from desktop.services.android_permissions import (
     AndroidPermissionHelper,
     is_android,
     PERMISSION_POST_NOTIFICATIONS,

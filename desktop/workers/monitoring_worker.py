@@ -7,7 +7,7 @@ from typing import Optional
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMutex, QMutexLocker, QWaitCondition
 from datetime import datetime
 
-from app.desktop.services.health_service import HealthService
+from desktop.services.health_service import HealthService
 
 
 class MonitoringWorker(QThread):

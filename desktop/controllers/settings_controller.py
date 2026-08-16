@@ -6,11 +6,11 @@ from typing import Dict, Any
 
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 
-from app.desktop.models.settings_model import (
+from desktop.models.settings_model import (
     SystemSettings, GeneralSettings, CameraSettings, AISettings,
     NotificationSettings, StorageSettings, SecuritySettings
 )
-from app.desktop.services.settings_service import SettingsService
+from desktop.services.settings_service import SettingsService
 
 
 class SettingsController(QObject):

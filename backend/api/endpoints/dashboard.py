@@ -253,3 +253,14 @@ async def get_system_metrics(
         },
         "timestamp": datetime.utcnow().isoformat()
     }
+
+@router.get("/stats")
+async def get_stats(current_user=Depends(get_current_user), db: Session=Depends(get_db)):
+    try:
+        from backend.database.models import FallEvent, Alert, Camera, Person
+        falls=db.query(FallEvent).count(); alerts=db.query(Alert).count()
+        cameras=db.query(Camera).count(); persons=db.query(Person).count()
+        active=db.query(Camera).filter(Camera.is_active==True).count()
+    except Exception:
+        falls=alerts=cameras=persons=active=0
+    return {"falls_total":falls,"alerts_total":alerts,"cameras_total":cameras,"cameras_active":active,"persons_total":persons,"timestamp":datetime.utcnow().isoformat()}

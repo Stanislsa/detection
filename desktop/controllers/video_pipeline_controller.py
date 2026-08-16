@@ -8,11 +8,11 @@ from typing import Optional, Dict, Any, List
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot, QMutex
 from PyQt6.QtGui import QImage
 
-from app.desktop.workers.camera_worker import CameraWorker
-from app.desktop.workers.video_worker import VideoWorker
-from app.desktop.workers.inference_worker import InferenceWorker
-from app.desktop.services.camera_service import CameraService
-from app.desktop.controllers.video_image_provider import VideoImageProvider
+from desktop.workers.camera_worker import CameraWorker
+from desktop.workers.video_worker import VideoWorker
+from desktop.workers.inference_worker import InferenceWorker
+from desktop.services.camera_service import CameraService
+from desktop.controllers.video_image_provider import VideoImageProvider
 
 
 class VideoPipelineController(QObject):

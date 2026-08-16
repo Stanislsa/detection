@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import uuid
 import random
 
-from app.desktop.models.event_model import Event, EventType, EventSeverity, EventStatus
+from desktop.models.event_model import Event, EventType, EventSeverity, EventStatus
 
 
 class EventService:

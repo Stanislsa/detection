@@ -5,8 +5,8 @@ Tests unitaires de la gestion des caméras.
 
 import pytest
 from unittest.mock import Mock, patch
-from app.desktop.services.camera_service import CameraService, Camera
-from app.desktop.services.api_client import APIClient, APIResponse
+from desktop.services.camera_service import CameraService, Camera
+from desktop.services.api_client import APIClient, APIResponse
 
 
 class TestCameraService:

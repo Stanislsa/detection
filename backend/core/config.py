@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     
     # ─── APPLICATION ───
     APP_NAME: str = "SentinelAI"
-    APP_VERSION: str = "2.0.0"
+    APP_VERSION: str = "2.1.0"
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
     DEBUG: bool = Field(default=False, env="DEBUG")
     
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     DATABASE_ECHO: bool = False
     
     # ─── SECURITY ───
-    SECRET_KEY: str = Field(..., env="SECRET_KEY")
+    SECRET_KEY: str = Field(default="dev-only-change-me-sentinelai-2026-insecure", env="SECRET_KEY")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 240
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -119,7 +119,7 @@ class Settings(BaseSettings):
     LOG_RETENTION: int = 30  # days
     
     # ─── CORS ───
-    CORS_ORIGINS: list = Field(default_factory=lambda: ["http://localhost:3000"])
+    CORS_ORIGINS: list = Field(default_factory=lambda: ["http://localhost:3000", "http://127.0.0.1:8000", "http://localhost:8000", "*"])
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: list = Field(default_factory=lambda: ["*"])
     CORS_ALLOW_HEADERS: list = Field(default_factory=lambda: ["*"])

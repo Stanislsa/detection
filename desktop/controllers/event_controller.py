@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 
-from app.desktop.models.event_model import Event, EventType, EventSeverity, EventStatus
-from app.desktop.services.event_service import EventService
+from desktop.models.event_model import Event, EventType, EventSeverity, EventStatus
+from desktop.services.event_service import EventService
 
 
 class EventController(QObject):

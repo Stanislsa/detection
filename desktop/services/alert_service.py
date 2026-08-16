@@ -8,8 +8,8 @@ import random
 from datetime import datetime, timedelta
 from typing import List, Optional, Callable
 
-from app.desktop.models.alert_model import Alert, AlertPriority, AlertStatus, AlertType
-from app.desktop.models.alert_config import AlertRealtimeConfig
+from desktop.models.alert_model import Alert, AlertPriority, AlertStatus, AlertType
+from desktop.models.alert_config import AlertRealtimeConfig
 
 
 CRITICAL_SCENARIOS = []  # filled after
