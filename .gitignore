@@ -294,3 +294,13 @@ System Volume Information/
 *.orig
 *.rej
 *.swp
+
+# ML runtime artifacts
+data/fragments/
+data/features/raw/
+data/features/processed/
+data/features/by_class/
+data/models/
+*.joblib
+*.npy
+

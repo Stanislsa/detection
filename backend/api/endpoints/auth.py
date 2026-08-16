@@ -203,3 +203,58 @@ async def get_current_user_info(current_user = Depends(get_current_user)):
         "is_active": current_user.is_active,
         "last_login": current_user.last_login.isoformat() if current_user.last_login else None
     }
+
+# Email simulation endpoints
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional
+from backend.notifications.email_simulator import email_sim
+
+class EmailRequest(BaseModel):
+    email: EmailStr
+    username: Optional[str] = None
+
+class VerifyCodeRequest(BaseModel):
+    email: EmailStr
+    code: str = Field(..., min_length=4, max_length=12)
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: str = Field(..., min_length=4, max_length=12)
+    new_password: str = Field(..., min_length=6)
+
+@router.post("/send-verification")
+async def send_verification_email(body: EmailRequest):
+    mail = email_sim.send_verification(str(body.email), body.username or "")
+    return {"ok": True, "simulated": True, "email": str(body.email), "dev_code": mail.code, "expires_at": mail.expires_at.isoformat()}
+
+@router.post("/verify-email")
+async def verify_email_code(body: VerifyCodeRequest):
+    if not email_sim.consume_code(str(body.email), "verify_email", body.code):
+        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+    return {"ok": True, "message": "Email verified (simulated)"}
+
+@router.post("/forgot-password")
+async def forgot_password(body: EmailRequest):
+    mail = email_sim.send_password_reset(str(body.email))
+    return {"ok": True, "simulated": True, "email": str(body.email), "dev_code": mail.code}
+
+@router.post("/reset-password")
+async def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
+    if not email_sim.consume_code(str(body.email), "password_reset", body.code):
+        raise HTTPException(status_code=400, detail="Invalid or expired reset code")
+    return {"ok": True, "message": "Password reset accepted (simulated)", "email": str(body.email)}
+
+@router.post("/send-otp")
+async def send_login_otp(body: EmailRequest):
+    mail = email_sim.send_login_otp(str(body.email), body.username or "")
+    return {"ok": True, "simulated": True, "dev_code": mail.code}
+
+@router.post("/verify-otp")
+async def verify_login_otp(body: VerifyCodeRequest):
+    if not email_sim.consume_code(str(body.email), "login_otp", body.code):
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    return {"ok": True, "message": "OTP verified"}
+
+@router.get("/email-sim/history")
+async def email_sim_history(limit: int = 20):
+    return {"items": email_sim.history(limit=limit), "simulated": True}

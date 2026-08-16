@@ -24,3 +24,16 @@ python start.py --frontend-only
 ./start.sh
 python scripts/verify_connections.py
 ```
+
+
+## Apprentissage (vidéos → tri)
+
+Placez les vidéos dans `données/vidéo/` puis :
+
+```bash
+python start_train.py
+```
+
+Pipeline : fragmentation → **21 indicateurs** → stockage `data/features/` → tri normal/urgent/critique → **DecisionTree + RandomForest**.
+
+Voir `docs/INDICATORS_AND_TREES.md`.
