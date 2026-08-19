@@ -46,37 +46,56 @@ MIN_GOOD_F1_MACRO = 0.70
 CV_FOLDS = 3
 RANDOM_STATE = 42
 TEST_SIZE = 0.25
-HYPERPARAM_N_ITER = 12
-HYPERPARAM_CV = 3
-N_ESTIMATORS_DEFAULT = 150
-MAX_DEPTH_DEFAULT = 10
+
+# --- Hyperparamétrage optimisé ---
+HYPERPARAM_N_ITER = 24
+HYPERPARAM_CV = 5
+HYPERPARAM_REFINE = True
+HYPERPARAM_REFINE_ITER = 12
+N_ESTIMATORS_DEFAULT = 200
+MAX_DEPTH_DEFAULT = 12
+
 PARAM_GRIDS = {
     "decision_tree": {
-        "max_depth": [3, 5, 8, 12, None],
-        "min_samples_leaf": [1, 2, 4],
-        "min_samples_split": [2, 5],
+        "max_depth": [3, 4, 6, 8, 10, 14, None],
+        "min_samples_leaf": [1, 2, 3, 5],
+        "min_samples_split": [2, 4, 8],
         "criterion": ["gini", "entropy"],
         "class_weight": ["balanced"],
+        "max_features": [None, "sqrt"],
     },
     "random_forest": {
-        "n_estimators": [50, 100, 150, 200],
-        "max_depth": [5, 8, 12, None],
-        "min_samples_leaf": [1, 2, 4],
-        "max_features": ["sqrt", "log2", None],
+        "n_estimators": [80, 120, 160, 200, 300],
+        "max_depth": [4, 6, 8, 12, 16, None],
+        "min_samples_leaf": [1, 2, 3, 5],
+        "min_samples_split": [2, 4],
+        "max_features": ["sqrt", "log2", 0.5, None],
         "class_weight": ["balanced", "balanced_subsample"],
+        "bootstrap": [True, False],
     },
     "extra_trees": {
-        "n_estimators": [50, 100, 150, 200],
-        "max_depth": [5, 8, 12, None],
-        "min_samples_leaf": [1, 2, 4],
-        "max_features": ["sqrt", "log2"],
+        "n_estimators": [80, 120, 160, 200, 300],
+        "max_depth": [4, 6, 8, 12, 16, None],
+        "min_samples_leaf": [1, 2, 3, 5],
+        "min_samples_split": [2, 4],
+        "max_features": ["sqrt", "log2", 0.5],
         "class_weight": ["balanced"],
+        "bootstrap": [False, True],
     },
     "gradient_boosting": {
-        "n_estimators": [50, 80, 100],
-        "max_depth": [2, 3, 5],
-        "learning_rate": [0.05, 0.08, 0.1, 0.15],
-        "subsample": [0.8, 1.0],
-        "min_samples_leaf": [1, 2],
+        "n_estimators": [60, 100, 150, 200],
+        "max_depth": [2, 3, 4, 5],
+        "learning_rate": [0.03, 0.05, 0.08, 0.1, 0.15],
+        "subsample": [0.7, 0.85, 1.0],
+        "min_samples_leaf": [1, 2, 4],
+        "max_features": ["sqrt", None],
     },
+}
+
+# Grilles de raffinement (valeurs proches du best — générées dynamiquement aussi)
+REFINE_DELTA = {
+    "n_estimators": [-40, -20, 0, 20, 40],
+    "max_depth": [-2, -1, 0, 1, 2],
+    "min_samples_leaf": [-1, 0, 1],
+    "learning_rate": [0.8, 1.0, 1.2],  # facteurs multiplicatifs
 }

@@ -197,26 +197,63 @@ class MediaPipeFallDetector(MediaPipePoseDetector):
         self.previous_landmarks = landmarks
         self.previous_timestamp = datetime.utcnow()
         
-        # Calculate fall confidence
-        fall_confidence = self._calculate_fall_confidence(
-            trunk_angle,
-            is_horizontal,
-            head_position,
-            vertical_velocity,
-            person_profile
+        # --- CDC : critères formels versionnés ---
+        from backend.ai.fall_criteria import (
+            criteria_for_profile,
+            compute_signals,
+            decide_fall,
         )
-        
-        # Determine if fall detected
-        threshold = person_profile.get("velocity_threshold", -2.5) if person_profile else -2.5
-        fall_detected = fall_confidence > 0.75 or vertical_velocity < threshold
-        
+        from backend.services.severity_engine import assess_severity
+
+        # Vitesse : on utilise la magnitude (chute = mouvement rapide vers le sol)
+        v_mag = abs(float(vertical_velocity))
+        impact_accel = 0.0
+        if hasattr(self, "_prev_velocity") and self._prev_velocity is not None:
+            impact_accel = abs(v_mag - abs(self._prev_velocity)) / 0.05
+        self._prev_velocity = vertical_velocity
+
+        # Temps au sol approximatif (état interne)
+        if not hasattr(self, "_horizontal_since"):
+            self._horizontal_since = None
+        now = datetime.utcnow()
+        if is_horizontal:
+            if self._horizontal_since is None:
+                self._horizontal_since = now
+            time_on_ground = (now - self._horizontal_since).total_seconds()
+        else:
+            self._horizontal_since = None
+            time_on_ground = 0.0
+
+        stillness = 0.85 if (is_horizontal and v_mag < 0.4) else 0.15
+        criteria = criteria_for_profile(person_profile)
+        signals = compute_signals(
+            trunk_angle_deg=float(trunk_angle),
+            vertical_velocity_ms=v_mag,
+            is_horizontal=bool(is_horizontal),
+            impact_accel_ms2=float(impact_accel),
+            stillness_ratio=stillness,
+            time_on_ground_s=float(time_on_ground),
+        )
+        decision = decide_fall(signals, criteria)
+        severity = assess_severity(signals, person_profile, decision["confidence"])
+
         return {
-            "fall_detected": fall_detected,
-            "confidence": fall_confidence,
+            "fall_detected": decision["fall_detected"],
+            "confidence": decision["confidence"],
             "trunk_angle": trunk_angle,
+            "trunk_angle_deg": trunk_angle,
             "is_horizontal": is_horizontal,
             "vertical_velocity": vertical_velocity,
-            "method": "mediapipe"
+            "vertical_velocity_ms": v_mag,
+            "impact_accel_ms2": impact_accel,
+            "time_on_ground_s": time_on_ground,
+            "stillness_ratio": stillness,
+            "head_position": head_position,
+            "criteria_version": decision["criteria_version"],
+            "decision": decision,
+            "severity": severity,
+            "method": "mediapipe_pose",
+            "landmarks_count": len(landmarks),
         }
     
     def _calculate_trunk_angle(self, landmarks: List[Dict]) -> float:

@@ -9,6 +9,7 @@ from ml.config import (
     F1_ANALYSIS_LOG, HYPERPARAM_LOG, SCALER_PATH, CLASSES,
     MIN_SAMPLES_TOTAL, MIN_ACCEPTABLE_F1_MACRO, MIN_GOOD_F1_MACRO,
     RANDOM_STATE, TEST_SIZE, HYPERPARAM_N_ITER, HYPERPARAM_CV, PARAM_GRIDS,
+    HYPERPARAM_REFINE, HYPERPARAM_REFINE_ITER,
     N_ESTIMATORS_DEFAULT, MAX_DEPTH_DEFAULT,
 )
 from ml.indicators import INDICATOR_IDS
@@ -163,37 +164,212 @@ def _base_estimators():
         "gradient_boosting": GradientBoostingClassifier(random_state=RANDOM_STATE),
     }
 
-def hyperparam_search(X, y, n_iter=HYPERPARAM_N_ITER):
+def hyperparam_search(X, y, n_iter=HYPERPARAM_N_ITER, refine: bool = None):
+    """
+    Recherche d'hyperparamètres multi-modèles optimisée (F1-macro).
+
+    1) RandomizedSearchCV large sur 4 familles d'arbres
+    2) Passe de raffinement locale autour du meilleur (optionnel)
+    3) Export top essais + importance features
+    """
     from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
-    results = {"started_at": datetime.utcnow().isoformat(), "models": {}}
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
+
+    if refine is None:
+        refine = bool(HYPERPARAM_REFINE)
+
+    results = {
+        "started_at": datetime.utcnow().isoformat(),
+        "models": {},
+        "n_samples": int(len(y)),
+        "n_features": int(X.shape[1]) if hasattr(X, "shape") else 0,
+        "scoring": "f1_macro",
+    }
     counts = _class_counts(y)
     min_class = min((v for v in counts.values() if v > 0), default=0)
-    n_splits = min(HYPERPARAM_CV, min_class) if min_class >= 2 else 2
-    if len(y) < n_splits * 2: n_splits = 2
+    n_splits = min(int(HYPERPARAM_CV), max(2, min_class))
+    if len(y) < n_splits * 2:
+        n_splits = 2
+    # Si très peu de données, limiter les essais
+    effective_iter = int(n_iter)
+    if len(y) < 20:
+        effective_iter = min(effective_iter, 10)
+        n_splits = min(n_splits, 3)
+
+    bases = {
+        "decision_tree": DecisionTreeClassifier(random_state=RANDOM_STATE),
+        "random_forest": RandomForestClassifier(random_state=RANDOM_STATE, n_jobs=-1),
+        "extra_trees": ExtraTreesClassifier(random_state=RANDOM_STATE, n_jobs=-1),
+        "gradient_boosting": GradientBoostingClassifier(random_state=RANDOM_STATE),
+    }
+
     best_name, best_est, best_score = None, None, -1.0
-    for name, base in _base_estimators().items():
+    ranking = []
+
+    for name, base in bases.items():
         grid = PARAM_GRIDS.get(name, {})
-        if not grid: continue
-        print(f"[hyper] Recherche {name} ({n_iter} essais, cv={n_splits})…")
+        if not grid:
+            continue
+        # n_iter limité par le produit cartésien approximatif
+        max_combos = 1
+        for v in grid.values():
+            max_combos *= max(len(v), 1)
+        n_try = min(effective_iter, max_combos, 40)
+        print(f"[hyper] Recherche {name} ({n_try} essais, cv={n_splits})…")
         try:
             cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=RANDOM_STATE)
-            search = RandomizedSearchCV(base, grid, n_iter=min(n_iter, 20), scoring="f1_macro",
-                cv=cv, random_state=RANDOM_STATE, n_jobs=-1, refit=True, error_score=0.0)
+            search = RandomizedSearchCV(
+                base, grid,
+                n_iter=n_try,
+                scoring="f1_macro",
+                cv=cv,
+                random_state=RANDOM_STATE,
+                n_jobs=-1,
+                refit=True,
+                error_score=0.0,
+                return_train_score=True,
+            )
             search.fit(X, y)
-            entry = {"best_score_cv_f1_macro": round(float(search.best_score_), 4),
-                     "best_params": search.best_params_, "n_iter": int(n_iter), "cv_splits": n_splits}
+            cv_res = search.cv_results_
+            # Top 5 essais
+            order = np.argsort(cv_res["mean_test_score"])[::-1][:5]
+            top = []
+            for i in order:
+                top.append({
+                    "rank": int(cv_res["rank_test_score"][i]),
+                    "mean_f1_macro": round(float(cv_res["mean_test_score"][i]), 4),
+                    "std_f1_macro": round(float(cv_res["std_test_score"][i]), 4),
+                    "mean_train_f1": round(float(cv_res["mean_train_score"][i]), 4),
+                    "params": {k: (None if v is None else (int(v) if isinstance(v, (np.integer,)) else
+                              float(v) if isinstance(v, (float, np.floating)) else v))
+                               for k, v in cv_res["params"][i].items()},
+                })
+            entry = {
+                "best_score_cv_f1_macro": round(float(search.best_score_), 4),
+                "best_params": search.best_params_,
+                "n_iter": n_try,
+                "cv_splits": n_splits,
+                "top_trials": top,
+                "overfit_gap": round(
+                    float(cv_res["mean_train_score"][search.best_index_] - search.best_score_), 4
+                ),
+            }
             results["models"][name] = entry
-            print(f"[hyper]   {name}: cv_f1={entry['best_score_cv_f1_macro']:.3f} params={search.best_params_}")
+            ranking.append((float(search.best_score_), name, search.best_estimator_, entry))
+            print(
+                f"[hyper]   {name}: cv_f1={entry['best_score_cv_f1_macro']:.3f} "
+                f"gap_train={entry['overfit_gap']:.3f} params={search.best_params_}"
+            )
             if search.best_score_ > best_score:
                 best_score = float(search.best_score_)
                 best_name, best_est = name, search.best_estimator_
         except Exception as e:
             print(f"[hyper]   {name} ÉCHEC: {e}")
             results["models"][name] = {"error": str(e)}
+
+    ranking.sort(key=lambda x: x[0], reverse=True)
+    results["ranking"] = [
+        {"model": n, "cv_f1_macro": round(s, 4)} for s, n, _, _ in ranking
+    ]
+
+    # --- Passe de raffinement autour du meilleur ---
+    if refine and best_est is not None and best_name is not None:
+        print(f"[hyper] Raffinement autour de {best_name}…")
+        try:
+            fine_grid = _refine_grid(best_name, getattr(best_est, "get_params")())
+            if fine_grid:
+                base = bases[best_name]
+                cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=RANDOM_STATE + 1)
+                n_ref = min(int(HYPERPARAM_REFINE_ITER), 20)
+                search2 = RandomizedSearchCV(
+                    base, fine_grid, n_iter=n_ref, scoring="f1_macro",
+                    cv=cv, random_state=RANDOM_STATE + 7, n_jobs=-1, refit=True, error_score=0.0,
+                )
+                search2.fit(X, y)
+                results["refine"] = {
+                    "model": best_name,
+                    "best_score_cv_f1_macro": round(float(search2.best_score_), 4),
+                    "best_params": search2.best_params_,
+                    "improved": bool(search2.best_score_ > best_score + 1e-4),
+                }
+                print(
+                    f"[hyper]   refine: cv_f1={search2.best_score_:.3f} "
+                    f"(avant {best_score:.3f}) params={search2.best_params_}"
+                )
+                if search2.best_score_ > best_score:
+                    best_score = float(search2.best_score_)
+                    best_est = search2.best_estimator_
+                    results["models"][best_name]["best_score_cv_f1_macro"] = round(best_score, 4)
+                    results["models"][best_name]["best_params"] = search2.best_params_
+                    results["models"][best_name]["refined"] = True
+        except Exception as e:
+            print(f"[hyper]   refine ÉCHEC: {e}")
+            results["refine"] = {"error": str(e)}
+
+    # Importance des features du meilleur modèle
+    if best_est is not None and hasattr(best_est, "feature_importances_"):
+        imp = best_est.feature_importances_
+        names = INDICATOR_IDS if len(INDICATOR_IDS) == len(imp) else [f"f{i}" for i in range(len(imp))]
+        pairs = sorted(zip(names, imp), key=lambda x: -x[1])[:15]
+        results["top_features"] = [
+            {"feature": n, "importance": round(float(v), 4)} for n, v in pairs
+        ]
+        sk_imp = sum(float(v) for n, v in zip(names, imp) if str(n).startswith("sk_"))
+        results["skeleton_importance_share"] = round(sk_imp / max(float(np.sum(imp)), 1e-9), 4)
+        print(f"[hyper] Share importance squelette sk_* = {results['skeleton_importance_share']:.2%}")
+        print("[hyper] Top features:", ", ".join(f"{n}={v:.3f}" for n, v in pairs[:8]))
+
     results["best_model"] = best_name
     results["best_cv_f1_macro"] = round(best_score, 4) if best_score >= 0 else None
     results["finished_at"] = datetime.utcnow().isoformat()
     return results, best_name, best_est, best_score
+
+
+def _refine_grid(model_name: str, best_params: dict) -> dict:
+    """Construit une grille locale autour des meilleurs paramètres."""
+    grid = {}
+    bp = dict(best_params or {})
+
+    def _ints(center, deltas, lo=1, hi=500):
+        vals = set()
+        if center is None:
+            return [None, 8, 12, 16]
+        for d in deltas:
+            v = int(center) + int(d)
+            if lo <= v <= hi:
+                vals.add(v)
+        vals.add(int(center))
+        return sorted(vals)
+
+    if "n_estimators" in bp and bp["n_estimators"] is not None:
+        grid["n_estimators"] = _ints(bp["n_estimators"], [-60, -30, -10, 0, 10, 30, 60], 30, 400)
+    if "max_depth" in bp:
+        if bp["max_depth"] is None:
+            grid["max_depth"] = [None, 10, 14, 18]
+        else:
+            grid["max_depth"] = _ints(bp["max_depth"], [-3, -1, 0, 1, 3], 2, 30) + [None]
+    if "min_samples_leaf" in bp and bp["min_samples_leaf"] is not None:
+        grid["min_samples_leaf"] = _ints(bp["min_samples_leaf"], [-2, -1, 0, 1, 2], 1, 20)
+    if "min_samples_split" in bp and bp["min_samples_split"] is not None:
+        grid["min_samples_split"] = _ints(bp["min_samples_split"], [-2, 0, 2], 2, 20)
+    if "learning_rate" in bp and bp["learning_rate"] is not None:
+        lr = float(bp["learning_rate"])
+        grid["learning_rate"] = sorted({round(lr * f, 4) for f in (0.6, 0.8, 1.0, 1.2, 1.5) if 0.01 <= lr * f <= 0.5})
+    if "subsample" in bp and bp["subsample"] is not None:
+        s = float(bp["subsample"])
+        grid["subsample"] = sorted({round(min(1.0, max(0.5, s + d)), 2) for d in (-0.15, -0.05, 0, 0.05, 0.1)})
+    if "max_features" in bp:
+        grid["max_features"] = list({bp["max_features"], "sqrt", "log2", 0.5, None})
+    if "criterion" in bp:
+        grid["criterion"] = ["gini", "entropy"]
+    if "class_weight" in bp:
+        grid["class_weight"] = ["balanced", "balanced_subsample"] if model_name == "random_forest" else ["balanced"]
+    if "bootstrap" in bp:
+        grid["bootstrap"] = [True, False]
+    # Filtrer clés vides
+    return {k: v for k, v in grid.items() if v}
+
 
 def train_trees(n_estimators=N_ESTIMATORS_DEFAULT, max_depth=MAX_DEPTH_DEFAULT,
                 min_samples=MIN_SAMPLES_TOTAL, n_iter=HYPERPARAM_N_ITER, skip_hyper=False):
@@ -213,6 +389,31 @@ def train_trees(n_estimators=N_ESTIMATORS_DEFAULT, max_depth=MAX_DEPTH_DEFAULT,
     report.update({"n_samples": int(len(y)), "n_features": int(X_raw.shape[1]) if len(X_raw) else 0,
                    "feature_names": INDICATOR_IDS, "classes": list(CLASSES), "class_counts": counts})
     print(f"[trees] Échantillons={len(y)} classes={counts}")
+
+    # ── Checklist qualité données (obligatoire) ──
+    try:
+        from ml.data_checklist import run_data_checklist, impute_missing
+        checklist = run_data_checklist(X_raw, y, ids, feature_names=INDICATOR_IDS, block_on_fail=True)
+        report["data_checklist"] = {
+            "overall": checklist.get("overall"),
+            "passed": checklist.get("passed"),
+            "log": "data/models/data_checklist.json",
+            "checks": [
+                {"id": c["id"], "status": c["status"], "name": c["name"]}
+                for c in checklist.get("checks", [])
+            ],
+        }
+        X_raw = impute_missing(X_raw)
+    except ValueError as e:
+        report["status"] = "blocked_checklist"
+        report["errors"].append({"error": {"code": "DATA_CHECKLIST_FAILED", "message": str(e)}})
+        print(f"[trees] ❌ Checklist: {e}")
+        TRAIN_LOG.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+        return report
+    except Exception as e:
+        print(f"[trees] ⚠ Checklist partielle: {e}")
+        report["data_checklist"] = {"overall": "warning", "error": str(e)}
+
     try:
         if len(y) < min_samples:
             raise InsufficientDataError(f"Pas assez d'échantillons ({len(y)} < {min_samples})",
@@ -225,7 +426,18 @@ def train_trees(n_estimators=N_ESTIMATORS_DEFAULT, max_depth=MAX_DEPTH_DEFAULT,
         return report
     try:
         scaler, X = _fit_scaler(X_raw)
-        X_bal, y_bal = _oversample_balance(X, y, rng)
+        try:
+            from ml.imbalance import balance_dataset
+            X_bal, y_bal, imb_report = balance_dataset(X, y, strategy="auto", rng=rng)
+            report["imbalance"] = imb_report
+            try:
+                from ml.visualize_leakage import plot_class_balance
+                plot_class_balance(y, y_bal)
+            except Exception:
+                pass
+        except Exception as e:
+            print(f"[trees] imbalance module fallback: {e}")
+            X_bal, y_bal = _oversample_balance(X, y, rng)
         print(f"[trees] Balance → {len(y_bal)} {_class_counts(y_bal)}")
     except Exception as e:
         err = TrainingError(f"Préprocessing: {e}")
@@ -237,8 +449,15 @@ def train_trees(n_estimators=N_ESTIMATORS_DEFAULT, max_depth=MAX_DEPTH_DEFAULT,
         try:
             hyper_info, best_name, best_model, best_cv = hyperparam_search(X_bal, y_bal, n_iter=n_iter)
             HYPERPARAM_LOG.write_text(json.dumps(hyper_info, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
-            report["hyperparam"] = {"best_model": best_name, "best_cv_f1_macro": hyper_info.get("best_cv_f1_macro"),
-                                    "log": str(HYPERPARAM_LOG)}
+            report["hyperparam"] = {
+                "best_model": best_name,
+                "best_cv_f1_macro": hyper_info.get("best_cv_f1_macro"),
+                "ranking": hyper_info.get("ranking"),
+                "refine": hyper_info.get("refine"),
+                "top_features": hyper_info.get("top_features"),
+                "skeleton_importance_share": hyper_info.get("skeleton_importance_share"),
+                "log": str(HYPERPARAM_LOG),
+            }
         except Exception as e:
             print(f"[trees] ⚠ Hyperparam échoué: {e}")
             report["errors"].append({"error": {"code": "HYPERPARAM_FAILED", "message": str(e)}})
@@ -370,3 +589,17 @@ def describe_trees():
         except Exception as e:
             info["load_error"] = str(e)
     return info
+
+
+# --- Compat: déléguer à sklearn Pipeline ---
+def train_with_sklearn_pipeline(X, y, skip_hyper=False):
+    from ml.sklearn_pipeline import fit_search_pipeline, save_pipeline, evaluate_pipeline
+    if skip_hyper:
+        from ml.sklearn_pipeline import build_pipeline
+        pipe = build_pipeline("extra_trees")
+        pipe.fit(X, y)
+        hyper = {"best_model": "extra_trees", "best_cv_f1_macro": None}
+    else:
+        pipe, hyper = fit_search_pipeline(X, y)
+    save_pipeline(pipe, meta=hyper)
+    return pipe, hyper

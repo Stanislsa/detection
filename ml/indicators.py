@@ -33,6 +33,22 @@ INDICATORS: Tuple[Indicator, ...] = (
     Indicator("n_frames", "Nombre frames", "dynamics", "Longueur clip", ">=1"),
     Indicator("motion_trend", "Tendance mouvement", "dynamics", "Pente / acceleration", "reel"),
     Indicator("stillness_ratio", "Ratio immobilite", "dynamics", "Fraction frames calmes", "0-1"),
+    # --- Features squelette (MediaPipe) — apprentissage aligné détection live ---
+    Indicator("sk_trunk_angle_mean", "Angle tronc moyen", "skeleton", "Inclinaison moyenne 0-90", "0-90"),
+    Indicator("sk_trunk_angle_max", "Angle tronc max", "skeleton", "Pic d inclinaison", "0-90"),
+    Indicator("sk_trunk_angle_std", "Variance angle tronc", "skeleton", "Variabilite posture", ">=0"),
+    Indicator("sk_trunk_angle_final", "Angle tronc final", "skeleton", "Posture en fin de clip", "0-90"),
+    Indicator("sk_vertical_speed_max", "Vitesse verticale max", "skeleton", "Pic chute (hanches)", ">=0"),
+    Indicator("sk_vertical_speed_mean", "Vitesse verticale moy", "skeleton", "Dynamique verticale", ">=0"),
+    Indicator("sk_impact_proxy", "Impact proxy", "skeleton", "Variation brutale de vitesse", ">=0"),
+    Indicator("sk_horizontal_ratio", "Ratio horizontal", "skeleton", "Fraction frames au sol", "0-1"),
+    Indicator("sk_time_on_ground_proxy", "Temps au sol proxy", "skeleton", "Duree horizontalite", "s"),
+    Indicator("sk_stillness_landmarks", "Immobilite squelette", "skeleton", "Faible mouvement landmarks", "0-1"),
+    Indicator("sk_hip_drop", "Descente hanches", "skeleton", "Delta y hanche debut-fin", "reel"),
+    Indicator("sk_head_hip_delta_y", "Tete vs hanche", "skeleton", "Alignement tete-hanche", "reel"),
+    Indicator("sk_pose_visibility", "Visibilite pose", "skeleton", "Confiance landmarks moy", "0-1"),
+    Indicator("sk_frames_with_pose", "Frames avec pose", "skeleton", "Nb frames pose detectee", ">=0"),
+    Indicator("sk_person_detected_ratio", "Ratio pose/frames", "skeleton", "Couverture pose du clip", "0-1"),
 )
 INDICATOR_IDS: List[str] = [i.id for i in INDICATORS]
 INDICATOR_BY_ID: Dict[str, Indicator] = {i.id: i for i in INDICATORS}

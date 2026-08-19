@@ -139,98 +139,152 @@ class AIManager:
         person_profile: Optional[Dict] = None
     ) -> Dict[str, Any]:
         """
-        Hybrid fall detection combining multiple methods.
-        
-        Args:
-            image: Input image
-            person_profile: Person profile
-        
-        Returns:
-            Combined fall detection result
+        Pipeline CDC / cœur métier :
+          1) YOLO → détection personne(s) (précision localisation)
+          2) Crop ROI personne principale
+          3) MediaPipe Pose → squelette 3D / landmarks
+          4) Critères formels (angle, vitesse, impact, temps au sol)
+          5) Score de gravité
+
+        YOLO ne remplace pas MediaPipe pour la chute (contrainte CDC) :
+        il cadre la personne pour améliorer la pose.
         """
-        results = {}
-        
-        # YOLO person detection
+        import numpy as np
+
+        results: Dict[str, Any] = {}
+        yolo_results: List[Dict[str, Any]] = []
+        roi_image = image
+        crop_box = None
+
+        # 1) YOLO personnes
         if "yolo_person" in self.detectors:
-            yolo_results = self.detectors["yolo_person"].detect(image)
-            results["yolo"] = yolo_results
-        
-        # MediaPipe pose analysis
-        if "mediapipe_fall" in self.detectors:
-            mediapipe_results = self.detectors["mediapipe_fall"].detect_fall(image, person_profile)
-            results["mediapipe"] = mediapipe_results
-        
-        # Scientific analysis if pose landmarks available
-        if "mediapipe" in results and results["mediapipe"].get("fall_detected"):
             try:
-                # Get pose landmarks
-                pose_detector = self.detectors.get("mediapipe_pose")
-                if pose_detector:
-                    poses = pose_detector.detect(image)
-                    if poses:
-                        landmarks = poses[0]["landmarks"]
-                        
-                        # Run scientific analysis
-                        scientific_results = self.scientific_engine.analyze_fall(
-                            landmarks,
-                            results["mediapipe"].get("vertical_velocity", 0.0),
-                            person_profile
-                        )
-                        results["scientific"] = scientific_results
+                yolo_results = self.detectors["yolo_person"].detect(image) or []
+                results["yolo"] = yolo_results
             except Exception as e:
-                logger.error(f"Scientific analysis failed: {e}")
-        
-        # Combine results
+                logger.warning(f"YOLO person failed: {e}")
+                results["yolo"] = []
+                yolo_results = []
+
+        # 2) ROI sur la personne la plus confiante / plus grande
+        if yolo_results:
+            try:
+                best = max(
+                    yolo_results,
+                    key=lambda d: float(d.get("confidence") or 0) * max(
+                        1.0,
+                        float((d.get("bbox") or d.get("box") or [0, 0, 1, 1])[2])
+                        * float((d.get("bbox") or d.get("box") or [0, 0, 1, 1])[3]),
+                    ),
+                )
+                box = best.get("bbox") or best.get("box") or best.get("xyxy")
+                if box is not None and len(box) >= 4:
+                    # Support xyxy or xywh
+                    x1, y1, a, b = [float(v) for v in box[:4]]
+                    if a > x1 and b > y1:  # likely xyxy
+                        x2, y2 = a, b
+                    else:  # xywh
+                        x2, y2 = x1 + a, y1 + b
+                    h, w = image.shape[:2]
+                    # padding 15%
+                    bw, bh = x2 - x1, y2 - y1
+                    x1 = max(0, int(x1 - 0.15 * bw))
+                    y1 = max(0, int(y1 - 0.15 * bh))
+                    x2 = min(w, int(x2 + 0.15 * bw))
+                    y2 = min(h, int(y2 + 0.15 * bh))
+                    if x2 > x1 + 10 and y2 > y1 + 10:
+                        roi_image = image[y1:y2, x1:x2]
+                        crop_box = [x1, y1, x2, y2]
+            except Exception as e:
+                logger.debug(f"ROI crop skip: {e}")
+
+        # 3) MediaPipe fall sur ROI (fallback full frame)
+        mp_results: Dict[str, Any] = {}
+        if "mediapipe_fall" in self.detectors:
+            try:
+                mp_results = self.detectors["mediapipe_fall"].detect_fall(
+                    roi_image, person_profile
+                )
+                # Si pose échoue sur ROI, réessayer frame entière
+                if not mp_results.get("landmarks_count") and roi_image is not image:
+                    mp_results = self.detectors["mediapipe_fall"].detect_fall(
+                        image, person_profile
+                    )
+                    crop_box = None
+                results["mediapipe"] = mp_results
+            except Exception as e:
+                logger.warning(f"MediaPipe fall failed: {e}")
+                results["mediapipe"] = {"fall_detected": False, "confidence": 0.0, "error": str(e)}
+        else:
+            results["mediapipe"] = {"fall_detected": False, "confidence": 0.0, "error": "mediapipe_unavailable"}
+
+        # 4) Analyse scientifique optionnelle
+        try:
+            if hasattr(self, "scientific_engine") and self.scientific_engine:
+                sci = getattr(self.scientific_engine, "analyze_fall", None)
+                if callable(sci):
+                    results["scientific"] = sci(image, person_profile) or {}
+        except Exception as e:
+            logger.debug(f"scientific analysis failed: {e}")
+
         combined = self._combine_detection_results(results)
-        
+        combined["yolo_person_count"] = len(yolo_results) if isinstance(yolo_results, list) else 0
+        combined["roi_crop"] = crop_box
+        combined["pipeline"] = "yolo_person → mediapipe_pose → fall_criteria → severity"
         return combined
-    
+
     def _combine_detection_results(self, results: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Combine results from multiple detection methods.
-        
-        Args:
-            results: Dictionary of results from different methods
-        
-        Returns:
-            Combined result
+        Combine results — CDC : MediaPipe Pose prioritaire (pas YOLO-Pose).
+        YOLO sert uniquement de confirmation « personne présente ».
         """
+        mp = results.get("mediapipe") or {}
+        yolo = results.get("yolo")
+        person_present = True
+        if isinstance(yolo, list):
+            person_present = len(yolo) > 0
+        elif isinstance(yolo, dict):
+            person_present = bool(yolo.get("detections") or yolo.get("persons") or yolo)
+
+        fall = bool(mp.get("fall_detected"))
+        conf = float(mp.get("confidence") or 0.0)
+        # Si aucune personne YOLO et confiance faible → prudence
+        if not person_present and conf < 0.85:
+            fall = False
+            conf = conf * 0.5
+
+        sci = results.get("scientific") or {}
+        if sci.get("fall_detected") and conf < 0.9:
+            conf = max(conf, float(sci.get("confidence") or conf))
+
         combined = {
-            "fall_detected": False,
-            "confidence": 0.0,
+            "fall_detected": fall,
+            "confidence": round(conf, 4),
             "methods_used": list(results.keys()),
-            "method_results": results
+            "method_results": results,
+            "person_present": person_present,
+            "method": "hybrid_yolo_mediapipe",
+            "trunk_angle": mp.get("trunk_angle") or mp.get("trunk_angle_deg"),
+            "vertical_velocity": mp.get("vertical_velocity"),
+            "vertical_velocity_ms": mp.get("vertical_velocity_ms"),
+            "is_horizontal": mp.get("is_horizontal"),
+            "impact_accel_ms2": mp.get("impact_accel_ms2"),
+            "stillness_ratio": mp.get("stillness_ratio"),
+            "criteria_version": mp.get("criteria_version"),
+            "decision": mp.get("decision"),
+            "severity": mp.get("severity") or sci.get("severity"),
+            "time_on_ground_s": mp.get("time_on_ground_s"),
+            "landmarks_count": mp.get("landmarks_count"),
+            "signals": (mp.get("decision") or {}).get("signals") or {
+                "trunk_angle_deg": mp.get("trunk_angle_deg") or mp.get("trunk_angle"),
+                "vertical_velocity_ms": mp.get("vertical_velocity_ms"),
+                "is_horizontal": 1.0 if mp.get("is_horizontal") else 0.0,
+                "time_on_ground_s": mp.get("time_on_ground_s"),
+            },
         }
-        
-        # Weighted combination
-        weights = {
-            "mediapipe": 0.6,
-            "yolo": 0.4
-        }
-        
-        total_weight = 0.0
-        weighted_confidence = 0.0
-        
-        for method, result in results.items():
-            if method in weights:
-                weight = weights[method]
-                confidence = result.get("confidence", 0.0)
-                
-                weighted_confidence += weight * confidence
-                total_weight += weight
-        
-        if total_weight > 0:
-            combined["confidence"] = weighted_confidence / total_weight
-        
-        # Determine fall detection
-        combined["fall_detected"] = combined["confidence"] > 0.75
-        
-        # Include scientific decision if available
-        if "scientific" in results:
-            combined["scientific_decision"] = results["scientific"].get("decision", {})
-        
         return combined
-    
+
+
     def classify_image(
         self,
         image,

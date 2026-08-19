@@ -14,7 +14,12 @@ from ml.indicators import catalog_as_dict, indicators_by_family
 from ml.errors import LearningError, safe_call
 
 def run_pipeline(video_dir=None, skip_train=False, skip_hyper=False):
-    print("=" * 64); print("  SENTINELAI — APPRENTISSAGE (hyper + F1 + erreurs)"); print("=" * 64)
+    print("=" * 64); print("  SENTINELAI — APPRENTISSAGE (image + SQUELETTE + F1)"); print("=" * 64)
+    try:
+        from ml.skeleton_features import skeleton_available
+        print("  MediaPipe Pose:", "OK" if skeleton_available() else "INDISPONIBLE (features sk_* = 0)")
+    except Exception as e:
+        print("  MediaPipe Pose: erreur", e)
     errors = []
     for fam, inds in indicators_by_family().items():
         print(f"  [{fam}] {', '.join(i.id for i in inds)}")
@@ -71,9 +76,17 @@ def main(argv=None):
     p.add_argument("--video-dir", type=Path, default=None)
     p.add_argument("--skip-train", action="store_true")
     p.add_argument("--skip-hyper", action="store_true")
+    p.add_argument("--ordered-preprocess", action="store_true",
+                   help="Pipeline ordonné: brut→EDA→clean→split→scale→ML")
     p.add_argument("--list-indicators", action="store_true")
     p.add_argument("--describe-trees", action="store_true")
     args = p.parse_args(argv)
+    if getattr(args, "ordered_preprocess", False):
+        from ml.preprocess import run_full_pipeline
+        # Si features absentes, lancer d'abord extract classique sans train
+        r = run_full_pipeline(skip_hyper=args.skip_hyper)
+        print(r)
+        return 0 if r.get("status") == "completed" else 1
     if args.list_indicators:
         print(json.dumps(catalog_as_dict(), indent=2, ensure_ascii=False)); return 0
     if args.describe_trees:

@@ -48,7 +48,23 @@ def compute_indicators(clip_dir: Path) -> Optional[Dict[str, float]]:
         "n_frames": float(len(grays)), "motion_trend": trend,
         "stillness_ratio": float(np.mean(da < STILLNESS_THRESH)),
     }
-    return {k: float(values[k]) for k in INDICATOR_IDS}
+    # Fusion features image + squelette (MediaPipe)
+    try:
+        from ml.skeleton_features import compute_skeleton_indicators, SKELETON_INDICATOR_IDS
+        sk = compute_skeleton_indicators(clip_dir)
+        if sk:
+            values.update(sk)
+            print(f"[features:skeleton] {clip_dir.name} pose OK")
+        else:
+            for k in SKELETON_INDICATOR_IDS:
+                values.setdefault(k, 0.0)
+            print(f"[features:skeleton] {clip_dir.name} no pose → zeros")
+    except Exception as e:
+        from ml.skeleton_features import SKELETON_INDICATOR_IDS
+        for k in SKELETON_INDICATOR_IDS:
+            values.setdefault(k, 0.0)
+        print(f"[features:skeleton] skip ({e})")
+    return {k: float(values.get(k, 0.0)) for k in INDICATOR_IDS}
 
 def vectorize(indicators: Dict[str, float]) -> np.ndarray:
     return np.array([indicators[k] for k in INDICATOR_IDS], dtype=np.float32)

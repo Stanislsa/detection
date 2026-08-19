@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .endpoints import auth, users, persons, cameras, falls, alerts, dashboard, health, metrics, system, ai_training, telegram_api, ws
+from .endpoints import auth, users, persons, cameras, falls, alerts, dashboard, health, metrics, system, ai_training, telegram_api, ws, detection
 api_router = APIRouter()
 api_router.include_router(health.router, prefix="/health", tags=["health"])
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
@@ -14,3 +14,4 @@ api_router.include_router(ai_training.router, prefix="/ai", tags=["ai"])
 api_router.include_router(telegram_api.router, prefix="/telegram", tags=["telegram"])
 api_router.include_router(metrics.router, tags=["observability"])
 api_router.include_router(ws.router, tags=["websocket"])
+api_router.include_router(detection.router, prefix="/detection", tags=["detection"])
