@@ -69,6 +69,11 @@ class ApiClient(QObject):
     def create_camera(self, payload): return self.post("/cameras", json_body=payload)
     def list_alerts(self, skip=0, limit=100): return self.get("/alerts", params={"skip":skip,"limit":limit}) or []
     def dashboard_stats(self): return self.get("/dashboard/stats") or {}
+    def dashboard_history(self, days=30):
+        return self.get("/dashboard/history", params={"days": days}) or {}
+    def dashboard_kpis(self, days=30):
+        return self.get("/dashboard/kpis", params={"days": days}) or {}
+
     def system_metrics(self): return self.get("/system/metrics") or {}
     def ai_models(self): return self.get("/ai/models") or {}
     def start_training(self, payload): return self.post("/ai/train", json_body=payload)

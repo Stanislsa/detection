@@ -281,4 +281,13 @@ class DashboardService:
 
 
 # Global dashboard service instance
+
+    def get_kpi_history(self, db: Session, days: int = 30) -> Dict[str, Any]:
+        from backend.services.kpi_history import build_kpi_history
+        end_date = datetime.utcnow(); start_date = end_date - timedelta(days=days)
+        falls = get_fall_events(db, skip=0, limit=10000, start_date=start_date, end_date=end_date)
+        alerts = get_alerts(db, skip=0, limit=10000, start_date=start_date, end_date=end_date)
+        return build_kpi_history(falls, alerts, days=days)
+
 dashboard_service = DashboardService()
+

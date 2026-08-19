@@ -69,6 +69,16 @@ class Settings(BaseSettings):
     YOLO_CONFIDENCE_THRESHOLD: float = 0.5
     YOLO_NMS_THRESHOLD: float = 0.45
     YOLO_FRAME_SKIP: int = 3
+    RTSP_TRANSPORT: str = "tcp"
+    RTSP_OPEN_TIMEOUT_MS: int = 5000
+    RTSP_READ_TIMEOUT_MS: int = 5000
+    RTSP_RECONNECT_SEC: float = 3.0
+    RTSP_BUFFER_SIZE: int = 1
+    DETECTION_FPS: float = 5.0
+    CAMERA_LAN_SUBNET: str = "192.168.1.0/24"
+    CAMERA_RTSP_USER: str = ""
+    CAMERA_RTSP_PASSWORD: str = ""
+
     YOLO_TARGET_RESOLUTION: tuple = (640, 480)
     
     # MediaPipe

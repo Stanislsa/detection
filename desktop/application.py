@@ -1,3 +1,4 @@
+from desktop.controllers.dashboard_controller import DashboardController
 """
 Application principale PyQt6 + QML — portable Linux / Windows.
 """
@@ -96,6 +97,7 @@ class Application(QApplication):
         self._paths = AppPaths()
 
         self._auth_controller = AuthController()
+        self._dashboard_controller = DashboardController(self)
         self._alert_controller = AlertController()
         self._camera_service = CameraService()
         self._camera_controller = CameraController(self._camera_service)
@@ -177,6 +179,7 @@ class Application(QApplication):
 
         # Controllers
         ctx.setContextProperty("AuthController", self._auth_controller)
+        ctx.setContextProperty("DashboardController", self._dashboard_controller)
         ctx.setContextProperty("AlertController", self._alert_controller)
         ctx.setContextProperty("CameraController", self._camera_controller)
         ctx.setContextProperty("VideoPipeline", self._video_pipeline)

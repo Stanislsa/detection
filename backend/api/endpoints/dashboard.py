@@ -264,3 +264,17 @@ async def get_stats(current_user=Depends(get_current_user), db: Session=Depends(
     except Exception:
         falls=alerts=cameras=persons=active=0
     return {"falls_total":falls,"alerts_total":alerts,"cameras_total":cameras,"cameras_active":active,"persons_total":persons,"timestamp":datetime.utcnow().isoformat()}
+
+
+@router.get("/history")
+async def get_kpi_history(days: int = 30, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    from backend.services.dashboard_service import dashboard_service
+    if hasattr(dashboard_service, "get_kpi_history"):
+        return dashboard_service.get_kpi_history(db, days=max(1, min(days, 365)))
+    from backend.services.kpi_history import build_kpi_history
+    from backend.database.crud import get_fall_events, get_alerts
+    from datetime import datetime, timedelta
+    end = datetime.utcnow(); start = end - timedelta(days=days)
+    falls = get_fall_events(db, skip=0, limit=10000, start_date=start, end_date=end)
+    alerts = get_alerts(db, skip=0, limit=10000, start_date=start, end_date=end)
+    return build_kpi_history(falls, alerts, days=days)

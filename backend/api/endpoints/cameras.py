@@ -163,3 +163,32 @@ async def camera_heartbeat(
             detail="Camera not found"
         )
     return {"message": "Heartbeat recorded"}
+
+
+class RtspTestRequest(BaseModel):
+    rtsp_url: Optional[str] = None
+    grab_frame: bool = True
+
+@router.post("/test-rtsp")
+async def test_rtsp_url(body: RtspTestRequest, current_user: User = Depends(get_current_user)):
+    if not body.rtsp_url:
+        raise HTTPException(status_code=400, detail="rtsp_url requis")
+    from backend.services.camera_network import probe_rtsp
+    return probe_rtsp(body.rtsp_url, grab_frame=body.grab_frame)
+
+@router.post("/{camera_id}/test-rtsp")
+async def test_camera_rtsp(camera_id: int, grab_frame: bool = True,
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    camera = get_camera(db, camera_id)
+    if not camera:
+        raise HTTPException(status_code=404, detail="Camera not found")
+    from backend.services.camera_network import probe_rtsp
+    result = probe_rtsp(camera.rtsp_url, grab_frame=grab_frame)
+    return {"camera_id": camera_id, "name": camera.name, **result}
+
+@router.get("/network/settings")
+async def camera_network_settings(current_user: User = Depends(get_current_user)):
+    from backend.core.config import settings
+    return {"rtsp_transport": getattr(settings, "RTSP_TRANSPORT", "tcp"),
+            "lan_subnet": getattr(settings, "CAMERA_LAN_SUBNET", ""),
+            "detection_fps": getattr(settings, "DETECTION_FPS", 5.0)}
