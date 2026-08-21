@@ -37,3 +37,13 @@ python start_train.py
 Pipeline : fragmentation → **21 indicateurs** → stockage `data/features/` → tri normal/urgent/critique → **DecisionTree + RandomForest**.
 
 Voir `docs/INDICATORS_AND_TREES.md`.
+
+## Documentation complète de lancement
+
+Voir **[docs/GUIDE_LANCEMENT.md](docs/GUIDE_LANCEMENT.md)** :
+
+- Apprentissage du modèle (`start_train.py`, preprocess, optimisation)
+- Backend total / IA / test / production (+ notes C++ ONNX)
+- Frontend QML + PyQt6
+- Lancement joint `python start.py`
+- Structure du projet

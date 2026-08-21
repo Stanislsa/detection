@@ -47,6 +47,26 @@ def main() -> int:
     except Exception as e:
         errors += fail(str(e))
 
+    print("=== Structure & config ===")
+    for rel in [
+        "backend/main.py", "desktop/application.py", "ml/pipeline.py",
+        "ml/preprocess.py", "ml/sklearn_pipeline.py", "start.py", "start_train.py",
+        "run_app.py", "docs/GUIDE_LANCEMENT.md", ".env.example", "requirements.txt",
+        "native/CMakeLists.txt",
+    ]:
+        if (ROOT / rel).exists():
+            ok(rel)
+        else:
+            errors += fail(f"missing {rel}")
+    env_ex = ROOT / ".env.example"
+    if env_ex.exists():
+        txt = env_ex.read_text(encoding="utf-8")
+        for key in ("SECRET_KEY", "DATABASE_URL", "BACKEND_URL", "ENVIRONMENT"):
+            if key in txt:
+                ok(f".env.example has {key}")
+            else:
+                errors += fail(f".env.example missing {key}")
+
     print("\nRésultat:", f"{errors} problème(s)" if errors else "connexions OK")
     return 1 if errors else 0
 
